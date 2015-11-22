@@ -2,7 +2,7 @@
 import argparse
 
 # local module imports
-import enigma.machine as machine
+import machine as machine
 
 
 parser = argparse.ArgumentParser(

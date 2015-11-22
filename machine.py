@@ -5,7 +5,7 @@ import pickle
 # import colorama
 
 # local module imports
-import enigma.rotors as rotors
+import rotors as rotors
 
 
 class Machine:
