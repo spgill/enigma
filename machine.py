@@ -93,10 +93,13 @@ class Machine:
         assert hasattr(self, '_breakstate')
         self.stateSet(self._breakstate)
 
-    def transcode(self, stream):
+    def transcode(self, stream, trace=False):
         '''
         Transcode any object of iterable strings through
         the plugboard, rotors, reflector, and back out.
+
+        Optionally, you can have the generator yield transformation
+        traces instead of just the transformed characters.
         '''
 
         # start iterating through the incoming stream
@@ -112,24 +115,40 @@ class Machine:
             step = True
 
             # iterate through roters in forward order
+            stack = []
             for rotor in self.rotors:
                 # step rotor if needed
                 if step:
                     step = rotor.step()
 
                 # translate the pin forward through the rotor
-                pin = rotor.translate_forward(pin)
+                newpin = rotor.translate_forward(pin)
 
-            # reflect the pin through the reflector
-            pin = self.reflector.translate(pin)
+                # log the translation
+                stack.append((pin, newpin))
+                pin = newpin
+
+            # reflect the pin through the reflector and log it
+            newpin = self.reflector.translate(pin)
+            stack.append((pin, newpin))
+            pin = newpin
 
             # iterate through the rotors in reverse (no stepping, duh)
             for rotor in reversed(self.rotors):
                 # translate the pin in reverse
-                pin = rotor.translate_reverse(pin)
+                newpin = rotor.translate_reverse(pin)
 
-            # map pin to alphabet and yield it
-            yield rotors._RotorBase._abet[pin]
+                # log the translation
+                stack.append((pin, newpin))
+                pin = newpin
+
+            # if a trace is required, yield that
+            if trace:
+                yield stack + [rotors._RotorBase._abet[pin]]
+
+            # if a character is required, yield THAT
+            else:
+                yield rotors._RotorBase._abet[pin]
 
     def transcodeString(self, s):
         return ''.join(self.transcode(s))

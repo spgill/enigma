@@ -104,6 +104,7 @@ class MachineGUI(tkinter.Tk):
 
     def canvas_redraw(self):
         """Clear the canvas and draw the basic shapes"""
+        self.canvas.delete('all')
         self.rotors = [
             {'inner': [], 'outer': []},
             {'inner': [], 'outer': []},
@@ -225,11 +226,38 @@ class MachineGUI(tkinter.Tk):
         m = machine.Machine(None, rotors, reflector)
 
         # slowly feed the data through
-        for char in self.var_input.get():
-            result = m.transcodeString(char)
-            self.var_output.set(self.var_output.get() + result)
+        traces = m.transcode(self.var_input.get(), trace=True)
+        for trace in traces:
+            wires = []
+            print('TRACE', trace)
+
+            for i, (pin_in, pin_out) in enumerate(trace[0:3]):
+                print(i, pin_in, pin_out)
+                wires.append(self.rotors[i]['outer'][pin_in])
+                wires.append(self.rotors[i]['inner'][pin_out])
+
+            wires.append(self.rotors[3]['outer'][trace[3][0]])
+            wires.append(self.rotors[3]['inner'][trace[3][1]])
+            print(trace[3][0], trace[3][1])
+
+            for i, (pin_in, pin_out) in enumerate(trace[4:7]):
+                print(i, pin_in, pin_out)
+                wires.append(self.rotors[2 - i]['inner'][pin_in])
+                wires.append(self.rotors[2 - i]['outer'][pin_out])
+
+            wires.append((0, self.CANVAS_ROTOR_SIZE))
+
+            print()
+            self.var_output.set(self.var_output.get() + trace[-1])
+
+            self.canvas_redraw()
+            wire_last = (0, 0)
+            for wire in wires:
+                self.canvas.create_line(wire_last, wire, fill='#ff0000')
+                wire_last = wire
+
             self.update()
-            time.sleep(0.25)
+            time.sleep(0.1)
 
         # re-enabled input
         self.button_start['state'] = 'normal'
