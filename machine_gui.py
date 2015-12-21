@@ -18,6 +18,7 @@ class MachineGUI(tkinter.Tk):
         super().__init__(*args, **kwargs)
 
         # Let's get this party started
+        chassis.init_tk()
         self._config()
         self._setup()
         self.mainloop()
@@ -219,35 +220,41 @@ class MachineGUI(tkinter.Tk):
         self.var_output.set('')
 
         # resolve the rotors and reflector
-        rotors = [self.rotors_lookup[o.get()] for o in self.rotors_options]
-        reflector = self.reflector_lookup[self.reflector_option.get()]
+        m_rotors = [self.rotors_lookup[o.get()] for o in self.rotors_options]
+        m_reflector = self.reflector_lookup[self.reflector_option.get()]
 
         # initialize the machine
-        m = machine.Machine(None, rotors, reflector)
+        m = machine.Machine(None, m_rotors, m_reflector)
 
         # slowly feed the data through
         traces = m.transcode(self.var_input.get(), trace=True)
         for trace in traces:
             wires = []
-            print('TRACE', trace)
+            print(
+                'TRACE',
+                rotors._RotorBase._abet[trace[0][0]],
+                'to',
+                trace[-1],
+                trace[:-1]
+                )
 
             for i, (pin_in, pin_out) in enumerate(trace[0:3]):
-                print(i, pin_in, pin_out)
+                # print(i, pin_in, pin_out)
                 wires.append(self.rotors[i]['outer'][pin_in])
                 wires.append(self.rotors[i]['inner'][pin_out])
 
             wires.append(self.rotors[3]['outer'][trace[3][0]])
             wires.append(self.rotors[3]['inner'][trace[3][1]])
-            print(trace[3][0], trace[3][1])
+            # print(trace[3][0], trace[3][1])
 
             for i, (pin_in, pin_out) in enumerate(trace[4:7]):
-                print(i, pin_in, pin_out)
+                # print(i, pin_in, pin_out)
                 wires.append(self.rotors[2 - i]['inner'][pin_in])
                 wires.append(self.rotors[2 - i]['outer'][pin_out])
 
             wires.append((0, self.CANVAS_ROTOR_SIZE))
 
-            print()
+            # print()
             self.var_output.set(self.var_output.get() + trace[-1])
 
             self.canvas_redraw()
