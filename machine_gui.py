@@ -235,7 +235,7 @@ class MachineGUI(tkinter.Tk):
                 rotors._RotorBase._abet[trace[0][0]],
                 'to',
                 trace[-1],
-                trace[:-1]
+                repr(trace[:-1])[1:-1]
                 )
 
             for i, (pin_in, pin_out) in enumerate(trace[0:3]):
