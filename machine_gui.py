@@ -260,6 +260,11 @@ class MachineGUI(tkinter.Tk):
             self.canvas_redraw()
             wire_last = (0, 0)
             for wire in wires:
+                self.canvas.create_oval(
+                    (wire[0] - 5, wire[1] - 5),
+                    (wire[0] + 5, wire[1] + 5),
+                    fill='#ff0000'
+                )
                 self.canvas.create_line(wire_last, wire, fill='#ff0000')
                 wire_last = wire
 
