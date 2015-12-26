@@ -1,16 +1,24 @@
 # stdlib imports
 import argparse
+import sys
 
 # local module imports
 import machine_gui
 import machine as machine
+import rotors
 
 
 def run_cli(args):
     """Run the Enigma Machine with the command-line interface"""
-    print(args.input)
+    # print(args.input)
     em = machine.Machine(None, args.rotors, args.reflector)
-    print(em.transcodeString(args.input))
+    # print(em.transcodeString(args.input))
+    data = None
+    if args.stdin:
+        data = sys.stdin.read()
+    else:
+        data = args.input
+    sys.stdout.write(em.transcodeString(data, skip_invalid=True, trace=False))
 
 
 def run_gui(args):
@@ -38,8 +46,14 @@ parser_cli.add_argument(
     required=True
 )
 parser_cli.add_argument(
-    'input',
-    type=str
+    '--stdin',
+    action='store_true',
+    required=False
+)
+parser_cli.add_argument(
+    '--input',
+    type=str,
+    required=False
 )
 parser_cli.set_defaults(func=run_cli)
 
@@ -49,6 +63,4 @@ parser_gui.set_defaults(func=run_gui)
 
 
 args = parser.parse_args()
-print()
-print('ARGS', args)
 args.func(args)

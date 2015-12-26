@@ -93,7 +93,7 @@ class Machine:
         assert hasattr(self, '_breakstate')
         self.stateSet(self._breakstate)
 
-    def transcode(self, stream, trace=False):
+    def transcode(self, stream, skip_invalid=False, trace=False):
         '''
         Transcode any object of iterable strings through
         the plugboard, rotors, reflector, and back out.
@@ -103,9 +103,16 @@ class Machine:
         '''
 
         # start iterating through the incoming stream
-        for char in stream:
+        for char_in in stream:
             # check the character
-            char = self._checkChar(char)
+            if skip_invalid:
+                try:
+                    char = self._checkChar(char_in)
+                except ValueError:
+                    yield char_in
+                    continue
+            else:
+                char = self._checkChar(char_in)
 
             # convert it into into its a pin
             # (plugboard would go before this but it's a WIP)
@@ -142,13 +149,18 @@ class Machine:
                 stack.append((pin, newpin))
                 pin = newpin
 
+            # get the resulting character
+            char_out = rotors._RotorBase._abet[pin]
+            if char_in.islower():
+                char_out = char_out.lower()
+
             # if a trace is required, yield that
             if trace:
-                yield stack + [rotors._RotorBase._abet[pin]]
+                yield stack + [char_out]
 
             # if a character is required, yield THAT
             else:
-                yield rotors._RotorBase._abet[pin]
+                yield char_out
 
-    def transcodeString(self, s):
-        return ''.join(self.transcode(s))
+    def transcodeString(self, s, **kwargs):
+        return ''.join(self.transcode(s, **kwargs))
