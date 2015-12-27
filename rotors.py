@@ -17,8 +17,8 @@ def stringToRotor(s):
         raise ValueError(name + ' is not a valid rotor short-name')
 
     # extract the other settings
-    setting = split[1] if len(split) > 1 else None
-    notches = split[2:] if len(split) > 2 else None
+    setting = split[1].upper() if len(split) > 1 else None
+    notches = split[2].upper() if len(split) > 2 else None
 
     # Instantiate the rotor
     return rotor(setting=setting, notches=notches)
@@ -48,7 +48,7 @@ class _RotorBase:
     _short = 'base'
     _abet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     _wiring = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    _notches = ['A']
+    _notches = 'A'
 
     def __init__(self, setting=None, notches=None):
         '''Instantiate a new Rotor with custom or default settings'''
@@ -59,15 +59,15 @@ class _RotorBase:
             self.setting = 0  # A
 
         # Make a local copy of the wiring and alphabet
-        self.abet = self._abet
-        self.wiring = self._wiring
+        self.abet = self._shift(self._abet, self.setting)
+        self.wiring = self._shift(self._wiring, self.setting)
 
         # If no special notch is defined then use the rotor's class default
         self.notches = notches or self._notches
 
-    def _shift(self, s):
-        '''Shift a string by 1 character'''
-        return s[1:] + s[0]
+    def _shift(self, s, n=1):
+        '''Shift a string by n characters'''
+        return s[n:] + s[0:n]
 
     def step(self):
         '''
@@ -86,8 +86,8 @@ class _RotorBase:
             self.setting = 0
 
         # shift wiring tables
-        self.abet = self._shift(self.abet)
-        self.wiring = self._shift(self.wiring)
+        self.abet = self._shift(self.abet, n=1)
+        self.wiring = self._shift(self.wiring, n=1)
 
         # return the flag
         return notch
@@ -135,119 +135,119 @@ class CommercialI(_RotorBase):
     _name = 'Commercial Enigma - Rotor I'
     _short = 'com1'
     _wiring = 'DMTWSILRUYQNKFEJCAZBPGXOHV'
-    _notches = ['Q']
+    _notches = 'Q'
 
 
 class CommercialII(_RotorBase):
     _name = 'Commercial Enigma - Rotor II'
     _short = 'com2'
     _wiring = 'HQZGPJTMOBLNCIFDYAWVEUSRKX'
-    _notches = ['E']
+    _notches = 'E'
 
 
 class CommercialIII(_RotorBase):
     _name = 'Commercial Enigma - Rotor III'
     _short = 'com3'
     _wiring = 'UQNTLSZFMREHDPXKIBVYGJCWOA'
-    _notches = ['V']
+    _notches = 'V'
 
 
 class RailwayI(_RotorBase):
     _name = 'Railway Enigma - Rotor I'
     _short = 'rail1'
     _wiring = 'JGDQOXUSCAMIFRVTPNEWKBLZYH'
-    _notches = ['Q']
+    _notches = 'Q'
 
 
 class RailwayII(_RotorBase):
     _name = 'Railway Enigma - Rotor II'
     _short = 'rail2'
     _wiring = 'NTZPSFBOKMWRCJDIVLAEYUXHGQ'
-    _notches = ['E']
+    _notches = 'E'
 
 
 class RailwayIII(_RotorBase):
     _name = 'Railway Enigma - Rotor III'
     _short = 'rail3'
     _wiring = 'JVIUBHTCDYAKEQZPOSGXNRMWFL'
-    _notches = ['V']
+    _notches = 'V'
 
 
 class SwissI(_RotorBase):
     _name = 'Swiss K Enigma - Rotor I'
     _short = 'swiss1'
     _wiring = 'PEZUOHXSCVFMTBGLRINQJWAYDK'
-    _notches = ['Q']
+    _notches = 'Q'
 
 
 class SwissII(_RotorBase):
     _name = 'Swiss K Enigma - Rotor II'
     _short = 'swiss2'
     _wiring = 'ZOUESYDKFWPCIQXHMVBLGNJRAT'
-    _notches = ['E']
+    _notches = 'E'
 
 
 class SwissIII(_RotorBase):
     _name = 'Swiss K Enigma - Rotor III'
     _short = 'swiss3'
     _wiring = 'EHRVXGAOBQUSIMZFLYNWKTPDJC'
-    _notches = ['V']
+    _notches = 'V'
 
 
 class EnigmaI(_RotorBase):
     _name = 'Enigma I - Rotor I'
     _short = 'enig1'
     _wiring = 'EKMFLGDQVZNTOWYHXUSPAIBRCJ'
-    _notches = ['Q']
+    _notches = 'Q'
 
 
 class EnigmaII(_RotorBase):
     _name = 'Enigma I - Rotor II'
     _short = 'enig2'
     _wiring = 'AJDKSIRUXBLHWTMCQGZNPYFVOE'
-    _notches = ['E']
+    _notches = 'E'
 
 
 class EnigmaIII(_RotorBase):
     _name = 'Enigma I - Rotor III'
     _short = 'enig3'
     _wiring = 'BDFHJLCPRTXVZNYEIWGAKMUSQO'
-    _notches = ['V']
+    _notches = 'V'
 
 
 class ArmyIV(_RotorBase):
     _name = 'M3 Army - Rotor IV'
     _short = 'army4'
     _wiring = 'ESOVPZJAYQUIRHXLNFTGKDCMWB'
-    _notches = ['J']
+    _notches = 'J'
 
 
 class ArmyV(_RotorBase):
     _name = 'M3 Army - Rotor V'
     _short = 'army5'
     _wiring = 'VZBRGITYUPSDNHLXAWMJQOFECK'
-    _notches = ['Z']
+    _notches = 'Z'
 
 
 class NavyVI(_RotorBase):
     _name = 'M3 & M4 Naval Enigma - Rotor VI'
     _short = 'navy6'
     _wiring = 'JPGVOUMFYQBENHZRDKASXLICTW'
-    _notches = ['Z', 'M']
+    _notches = 'ZM'
 
 
 class NavyVII(_RotorBase):
     _name = 'M3 & M4 Naval Enigma - Rotor VII'
     _short = 'navy7'
     _wiring = 'NZJHGRCXMYSWBOUFAIVLPEKQDT'
-    _notches = ['Z', 'M']
+    _notches = 'ZM'
 
 
 class NavyVIII(_RotorBase):
     _name = 'M3 & M4 Naval Enigma - Rotor VIII'
     _short = 'navy8'
     _wiring = 'FKQHTLXOCBJSPDZRAMEWNIUYGV'
-    _notches = ['Z', 'M']
+    _notches = 'ZM'
 
 
 # # # REFLECTORS # # #
@@ -313,3 +313,14 @@ if __name__ == '__main__':
         print('\nSETTING', r._abet[r.setting])
         print('STEP!')
         print('NOTCHED?', r.step())
+
+    print('TESTING_SHIFT_METHOD')
+    s = '012345abcdef'
+    print('ORIGINAL', s)
+    print('SHIFT   ', r._shift(s))
+    print('SHIFT_n1', r._shift(s, 1))
+    print('SHIFT_n2', r._shift(s, 2))
+    print('SHIFT_n3', r._shift(s, 3))
+    print('SHIFT_n4', r._shift(s, 4))
+    print('SHIFT_n5', r._shift(s, 5))
+    print('SHIFT_n6', r._shift(s, 6))

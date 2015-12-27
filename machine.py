@@ -5,18 +5,29 @@ import pickle
 # import colorama
 
 # local module imports
-import rotors as rotors
+import enigma.rotors as rotors
 
 
 class Machine:
     '''Start a new machine with clean states and rotors'''
 
-    def __init__(self, plugboard, rotorStack, reflector):
-        '''Initialize Enigma Machine with all it's instantiated components'''
-        # Copy args to the class
-        self.plugboard = plugboard
-        self.rotors = rotorStack
-        self.reflector = reflector
+    def __init__(
+            self,
+            plugboard=None,
+            rotorStack=None,
+            reflector=None,
+            state=None
+            ):
+        """Initialize Enigma Machine with all it's instantiated components"""
+        # Unpack the state
+        if state:
+            self.stateSet(state)
+
+        # or unpack the args into the class
+        else:
+            self.plugboard = plugboard
+            self.rotors = rotorStack
+            self.reflector = reflector
 
         # Run the rotor check
         self._checkRotors()
@@ -74,7 +85,7 @@ class Machine:
             self.plugboard,
             self.rotors,
             self.reflector
-        ))
+        ), -1)
 
     def stateSet(self, state):
         '''Set the state of the machine from a serialized input'''
@@ -115,7 +126,7 @@ class Machine:
                 char = self._checkChar(char_in)
 
             # convert it into into its a pin
-            # (plugboard would go before this but it's a WIP)
+            # (plugboard would go before this but I'm not ready for that yet)
             pin = rotors._RotorBase._abet.index(char)
 
             # step the first rotor
