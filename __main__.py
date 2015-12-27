@@ -1,6 +1,7 @@
 # stdlib imports
 import argparse
 import bz2
+import datetime
 import io
 import sys
 
@@ -80,6 +81,8 @@ def run_cli(args):
     input_size = input_file.tell()
     input_file.seek(0)
 
+    time_start = datetime.datetime.utcnow()
+
     # Now it's time to do the dirty work...
     byte_count = 0
     while True:
@@ -99,6 +102,7 @@ def run_cli(args):
 
         # if no chunk was found, that means we're all done
         else:
+            print()
             break
 
     # Final compression bit
@@ -106,6 +110,14 @@ def run_cli(args):
         output_file.seek(0)
         mid = bz2.compress(output_file.read())
         output_file_final.write(mid)
+
+    time_stop = datetime.datetime.utcnow()
+    time_delta = (time_stop - time_start).total_seconds()
+    if args.benchmark:
+        print(input_size, 'BYTES in', time_delta, 'SECONDS')
+        print(input_size / time_delta, 'BYTES/s')
+        print(input_size / time_delta / 1024.0, 'KILOBYTES/s')
+        print(input_size / time_delta / 1024.0 / 1024.0, 'MEGABYTES/s')
 
 
 def run_gui(args):
@@ -237,6 +249,11 @@ parser_cli.add_argument(
     help="""
     Chunk size for reading and writing data.
     """
+)
+parser_cli.add_argument(
+    '--benchmark',
+    action='store_true',
+    required=False
 )
 
 parser_cli.set_defaults(func=run_cli)
