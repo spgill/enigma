@@ -11,9 +11,24 @@ import enigma.machine
 import rotors
 
 
+def _serialize_plugboard(stack):
+    """Serialize a plugboard stack back into character pairings"""
+    pairs = []
+    for i in range(26):
+        if stack[i] is None:
+            continue
+        if stack[i] != i:
+            x = i
+            y = stack[i]
+            pairs.append(
+                rotors._RotorBase._abet[x] + rotors._RotorBase._abet[y]
+            )
+            stack[y] = None
+    return pairs
+
+
 def run_cli(args):
     """Run the Enigma Machine with the command-line interface"""
-
     # Initialize the enigma machine using specified rotors or a state file
     machine = None
     if args.state_path and not args.state_create:
@@ -22,7 +37,11 @@ def run_cli(args):
     else:
         if not args.rotors or not args.reflector:
             raise ValueError('Rotors and reflectors were not provided')
-        machine = enigma.machine.Machine(None, args.rotors, args.reflector)
+        machine = enigma.machine.Machine(
+            args.plugboard,
+            args.rotors,
+            args.reflector
+        )
 
     # If a state file needs to be created, save it and exit
     if args.state_create:
@@ -30,15 +49,15 @@ def run_cli(args):
 
     # If the state shall be printed, make it so, and exit
     if args.state_print:
-        print('PLUGBOARD:', machine.plugboard, '(NOT IMPLEMENTED)')
+        print('PLUGBOARD:', ' '.join(_serialize_plugboard(machine.plugboard)))
         for i, rotor in enumerate(machine.rotors):
             print(
-                'ROTOR:', i, rotor._name,
+                'ROTOR:', i + 1, rotor._name,
                 'SETTING:', rotor._abet[rotor.setting],
                 'NOTCHES:', rotor.notches
             )
         print('REFLECTOR:', machine.reflector._name)
-        print('RAW:', machine.stateGet())
+        # print('RAW:', machine.stateGet())
         return
 
     # Work out the input
@@ -152,6 +171,17 @@ subparsers = parser.add_subparsers()
 parser_cli = subparsers.add_parser('cli')
 
 # Rotor args
+parser_cli.add_argument(
+    '--plugboard', '-p',
+    nargs='+',
+    default=[],
+    type=str,
+    required=False,
+    help="""
+    Specify a list of character pairings for the plugboard.
+    ex; AB CF HJ
+    """
+)
 parser_cli.add_argument(
     '--rotors', '-ro',
     nargs='+',

@@ -13,48 +13,66 @@ class Machine:
 
     def __init__(
             self,
-            plugboard=None,
-            rotorStack=None,
+            plugboardStack=[],
+            rotorStack=[],
             reflector=None,
             state=None
             ):
         """Initialize Enigma Machine with all it's instantiated components"""
+        # Initialize the empty variables
+        self.plugboard = []
+        self.rotors = []
+        self.reflector = None
+
         # Unpack the state
         if state:
             self.stateSet(state)
 
         # or unpack the args into the class
         else:
-            self.plugboard = plugboard
-            self.rotors = rotorStack
-            self.reflector = reflector
-
-        # Run the rotor check
-        self._checkRotors()
-        self._checkReflector()
+            self._initPlugboard(plugboardStack)
+            self._initRotors(rotorStack)
+            self._initReflector(reflector)
 
         # go ahead and set a break point
         self.breakSet()
 
-    def _checkRotors(self):
+
+    def _initPlugboard(self, stack):
+        '''Initialize the plugboard translation matrix'''
+        # Start with an untampered matrix
+        self.plugboard = list(range(26))
+
+        # Swap up the mappings for each desired pair
+        for pair in stack:
+            x = rotors._RotorBase._abet.index(pair.upper()[0])
+            y = rotors._RotorBase._abet.index(pair.upper()[1])
+            self.plugboard[x] = y
+            self.plugboard[y] = x
+
+
+    def _initRotors(self, stack):
         '''Check the passed rotors to see if they're strings or real rotors'''
-        for i, entry in enumerate(self.rotors):
+        for i, entry in enumerate(stack):
 
             # if it's an actual rotor instance, keep on swimming
             if isinstance(entry, rotors._RotorBase):
+                self.rotors.append(entry)
                 continue
 
             # if it's a string, turn it into a rotor
             if isinstance(entry, str):
-                self.rotors[i] = rotors.stringToRotor(entry)
+                self.rotors.append(rotors.stringToRotor(entry))
                 continue
 
             # else, throw a hissy
             print('OBJ', entry, 'TYPE', type(entry))
             raise TypeError('Unknown type of rotor passed into the machine')
 
-    def _checkReflector(self):
+    def _initReflector(self, reflector):
         '''Check to make sure a real reflector was passed in'''
+        self.reflector = reflector
+
         # if it's an actual reflector instance, keep on swimming
         if isinstance(self.reflector, rotors._ReflectorBase):
             return
@@ -125,9 +143,9 @@ class Machine:
             else:
                 char = self._checkChar(char_in)
 
-            # convert it into into its a pin
-            # (plugboard would go before this but I'm not ready for that yet)
+            # convert it into a pin and run it through the plugboard
             pin = rotors._RotorBase._abet.index(char)
+            pin = self.plugboard[pin]
 
             # step the first rotor
             step = True
@@ -159,6 +177,9 @@ class Machine:
                 # log the translation
                 stack.append((pin, newpin))
                 pin = newpin
+
+            # Run the pin back through the plugboard again
+            pin = self.plugboard[pin]
 
             # get the resulting character
             char_out = rotors._RotorBase._abet[pin]
