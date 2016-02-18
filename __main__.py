@@ -16,8 +16,8 @@ def run_cli(args):
 
     # Initialize the enigma machine using specified rotors or a state file
     machine = None
-    if args.state_file and not args.state_create:
-        state = open(args.state_file, 'rb').read()
+    if args.state_path and not args.state_create:
+        state = open(args.state_path, 'rb').read()
         machine = enigma.machine.Machine(state=state)
     else:
         if not args.rotors or not args.reflector:
@@ -26,7 +26,7 @@ def run_cli(args):
 
     # If a state file needs to be created, save it and exit
     if args.state_create:
-        return open(args.state_file, 'wb').write(machine.stateGet())
+        return open(args.state_path, 'wb').write(machine.stateGet())
 
     # If the state shall be printed, make it so, and exit
     if args.state_print:
@@ -39,6 +39,7 @@ def run_cli(args):
             )
         print('REFLECTOR:', machine.reflector._name)
         print('RAW:', machine.stateGet())
+        return
 
     # Work out the input
     input_file = None
@@ -57,7 +58,7 @@ def run_cli(args):
 
     # Check for decompression flag
     if args.input_bz2:
-        input_file = bz2.decompress(input_file)
+        input_file = io.BytesIO(bz2.decompress(input_file.read()))
 
     # Now let's work out the output
     output_file = None
@@ -98,7 +99,12 @@ def run_cli(args):
             output_file.write(chunk)
 
             progress = int(byte_count / input_size * 100.0)
-            sys.stderr.write('PROGRESS: ' + str(progress) + '%\r')
+            if not args.no_progress:
+                rs = ''.join([r._abet[r.setting] for r in machine.rotors])
+                sys.stderr.write(
+                    'ROTORS: ' + rs + '    ' +
+                    'PROGRESS: ' + str(progress) + '%\r'
+                )
 
         # if no chunk was found, that means we're all done
         else:
@@ -111,13 +117,24 @@ def run_cli(args):
         mid = bz2.compress(output_file.read())
         output_file_final.write(mid)
 
-    time_stop = datetime.datetime.utcnow()
-    time_delta = (time_stop - time_start).total_seconds()
+    # Collect time for benchmarking
     if args.benchmark:
-        print(input_size, 'BYTES in', time_delta, 'SECONDS')
-        print(input_size / time_delta, 'BYTES/s')
-        print(input_size / time_delta / 1024.0, 'KILOBYTES/s')
-        print(input_size / time_delta / 1024.0 / 1024.0, 'MEGABYTES/s')
+        time_stop = datetime.datetime.utcnow()
+        time_delta = (time_stop - time_start).total_seconds()
+        bps = input_size / time_delta
+        kbps = input_size / time_delta / 1024.0
+        mbps = input_size / time_delta / 1024.0 / 1024.0
+        sys.stderr.write("""
+{0} BYTES in {1:.2f} SECONDS
+{2:>10.2f} BYTES/s
+{3:>10.2f} KILOBYTES/s
+{4:>10.2f} MEGABYTES/s
+        """.format(input_size, time_delta, bps, kbps, mbps).strip())
+
+    # Write back to the state file if asked to
+    if args.state_update:
+        if args.state_path:
+            open(args.state_path, 'wb').write(machine.stateGet())
 
 
 def run_gui(args):
@@ -154,7 +171,7 @@ parser_cli.add_argument(
 
 # State args
 parser_cli.add_argument(
-    '--state-file',
+    '--state-path', '-s',
     type=str,
     default='',
     required=False,
@@ -164,13 +181,23 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--state-create',
+    '--state-create', '-sc',
     action='store_true',
     required=False,
     help='Take the rotor and reflector args and save it to the state file.'
 )
 parser_cli.add_argument(
-    '--state-print',
+    '--state-update', '-su',
+    action='store_true',
+    required=False,
+    help="""
+    After processing, save the changed rotor state back to the state file.
+    This allows for a continuous rotor progression over multiple
+    script invocations. THERE IS NO ROLLBACK, SO BACK IT UP.
+    """
+)
+parser_cli.add_argument(
+    '--state-print', '-sp',
     action='store_true',
     required=False,
     help="""
@@ -180,7 +207,7 @@ parser_cli.add_argument(
 
 # Input args
 parser_cli.add_argument(
-    '--input',
+    '--input', '-i',
     type=str,
     default='',
     required=False,
@@ -189,7 +216,7 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--input-std',
+    '--input-std', '-is',
     action='store_true',
     required=False,
     help="""
@@ -197,7 +224,7 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--input-path',
+    '--input-path', '-ip',
     type=str,
     default='',
     required=False,
@@ -206,7 +233,7 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--input-bz2',
+    '--input-bz2', '-iz',
     action='store_true',
     required=False,
     help="""
@@ -216,7 +243,7 @@ parser_cli.add_argument(
 
 # Output args
 parser_cli.add_argument(
-    '--output-std',
+    '--output-std', '-os',
     action='store_true',
     required=False,
     help="""
@@ -224,7 +251,7 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--output-path',
+    '--output-path', '-op',
     type=str,
     required=False,
     help="""
@@ -232,7 +259,7 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--output-bz2',
+    '--output-bz2', '-oz',
     action='store_true',
     required=False,
     help="""
@@ -251,9 +278,20 @@ parser_cli.add_argument(
     """
 )
 parser_cli.add_argument(
-    '--benchmark',
+    '--benchmark', '-b',
     action='store_true',
-    required=False
+    required=False,
+    help="""
+    Benchmark the processing time (prints results to stderr).
+    """
+)
+parser_cli.add_argument(
+    '--no-progress', '-np',
+    action='store_true',
+    required=False,
+    help="""
+    Suppress the progress meter that is normal written to stderr.
+    """
 )
 
 parser_cli.set_defaults(func=run_cli)
@@ -262,6 +300,8 @@ parser_cli.set_defaults(func=run_cli)
 parser_gui = subparsers.add_parser('gui')
 parser_gui.set_defaults(func=run_gui)
 
-
+if len(sys.argv) == 1:
+    print('("--help" flag inferred from no args)\n')
+    sys.argv.append('--help')
 args = parser.parse_args()
 args.func(args)
