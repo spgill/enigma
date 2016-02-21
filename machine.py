@@ -147,16 +147,9 @@ class Machine:
             pin = rotors._RotorBase._abet.index(char)
             pin = self.plugboard[pin]
 
-            # step the first rotor
-            step = True
-
             # iterate through roters in forward order
             stack = []
             for rotor in self.rotors:
-                # step rotor if needed
-                if step:
-                    step = rotor.step()
-
                 # translate the pin forward through the rotor
                 newpin = rotor.translate_forward(pin)
 
@@ -165,11 +158,11 @@ class Machine:
                 pin = newpin
 
             # reflect the pin through the reflector and log it
-            newpin = self.reflector.translate(pin)
+            newpin = self.reflector.translate_forward(pin)
             stack.append((pin, newpin))
             pin = newpin
 
-            # iterate through the rotors in reverse (no stepping, duh)
+            # iterate through the rotors in reverse
             for rotor in reversed(self.rotors):
                 # translate the pin in reverse
                 newpin = rotor.translate_reverse(pin)
@@ -177,6 +170,14 @@ class Machine:
                 # log the translation
                 stack.append((pin, newpin))
                 pin = newpin
+
+            # step the rotors in order
+            step = True
+            for rotor in self.rotors:
+                if step:
+                    step = rotor.step()
+                    if not step:
+                        break
 
             # Run the pin back through the plugboard again
             pin = self.plugboard[pin]

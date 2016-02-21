@@ -1,3 +1,5 @@
+import sys
+
 def stringToRotor(s):
     '''Turn a string into an instantiated rotor'''
     # Get all immediate subclasses of the rotor base class
@@ -58,16 +60,37 @@ class _RotorBase:
         else:
             self.setting = 0  # A
 
-        # Make a local copy of the wiring and alphabet
-        self.abet = self._shift(self._abet, self.setting)
-        self.wiring = self._shift(self._wiring, self.setting)
+        # Initialize and program wiring matrices
+        self.wiring_forward = list(range(26))
+        self.wiring_reverse = list(range(26))
 
-        # If no special notch is defined then use the rotor's class default
-        self.notches = notches or self._notches
+        for i in range(26):
+            x = i
+            y = self._abet.index(self._wiring[i])
+            self.wiring_forward[x] = y - x
+            self.wiring_reverse[y] = x - y
+
+        # sys.stderr.write(repr(self._wiring) + '\n')
+        # sys.stderr.write(repr(self.wiring_forward) + '\n')
+        # sys.stderr.write(repr(self.wiring_reverse) + '\n\n')
+
+        # Initialize the notch matrix
+        self.notches = []
+        for notch in notches or self._notches:
+            self.notches.append(self._abet.index(notch))
 
     def _shift(self, s, n=1):
         '''Shift a string by n characters'''
         return s[n:] + s[0:n]
+
+    def _loop(self, n):
+        '''Constrain a number N such that 0 <= N <= 25'''
+        while n < 0 or n > 25:
+            if n > 25:
+                n -= 26
+            if n < 0:
+                n += 26
+        return n
 
     def step(self):
         '''
@@ -77,32 +100,30 @@ class _RotorBase:
         '''
         # check for notches
         notch = False
-        if self._abet[self.setting] in self.notches:
+        if self.setting in self.notches:
             notch = True
 
         # increment rotor index, checking for loop condition
-        self.setting += 1
-        if self.setting >= 26:
-            self.setting = 0
-
-        # shift wiring tables
-        self.abet = self._shift(self.abet, n=1)
-        self.wiring = self._shift(self.wiring, n=1)
+        self.setting = self._loop(self.setting + 1)
 
         # return the flag
         return notch
 
     def translate_forward(self, pin_in):
         '''Translate one pin through this rotor in first pass mode.'''
-        char = self.abet[pin_in]
-        pin_out = self.wiring.index(char)
-        return pin_out
+        # char = self.abet[pin_in]
+        # pin_out = self.wiring.index(char)
+        # return pin_out
+        mod = self.wiring_forward[self._loop(pin_in + self.setting)]
+        return self._loop(pin_in + self.setting + mod)
 
     def translate_reverse(self, pin_in):
         '''Translate one pin through this rotor in reverse pass mode.'''
-        char = self.wiring[pin_in]
-        pin_out = self.abet.index(char)
-        return pin_out
+        # char = self.wiring[pin_in]
+        # pin_out = self.abet.index(char)
+        # return pin_out
+        mod = self.wiring_reverse[self._loop(pin_in + self.setting)]
+        return self._loop(pin_in + self.setting + mod)
 
 
 class _ReflectorBase(_RotorBase):
@@ -125,9 +146,6 @@ class _ReflectorBase(_RotorBase):
     # Equate the bad functions as 'no-no' functions so they'll throw errors
     step = nono
     translate_reverse = nono
-
-    # Make some aliases
-    translate = _RotorBase.translate_forward
 
 
 # # # rotors # # #
