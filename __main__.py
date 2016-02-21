@@ -32,7 +32,7 @@ def run_cli(args):
     # Initialize the enigma machine using specified rotors or a state file
     machine = None
     if args.state_path and not args.state_create:
-        state = open(args.state_path, 'rb').read()
+        state = bz2.open(args.state_path, 'rb').read()
         machine = enigma.machine.Machine(state=state)
     else:
         if not args.rotors or not args.reflector:
@@ -45,7 +45,7 @@ def run_cli(args):
 
     # If a state file needs to be created, save it and exit
     if args.state_create:
-        return open(args.state_path, 'wb').write(machine.stateGet())
+        return bz2.open(args.state_path, 'wb').write(machine.stateGet())
 
     # If the state shall be printed, make it so, and exit
     if args.state_print:
