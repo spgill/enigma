@@ -37,7 +37,6 @@ class Machine:
         # go ahead and set a break point
         self.breakSet()
 
-
     def _initPlugboard(self, stack):
         '''Initialize the plugboard translation matrix'''
         # Start with an untampered matrix
@@ -49,7 +48,6 @@ class Machine:
             y = rotors._RotorBase._abet.index(pair.upper()[1])
             self.plugboard[x] = y
             self.plugboard[y] = x
-
 
     def _initRotors(self, stack):
         '''Check the passed rotors to see if they're strings or real rotors'''
