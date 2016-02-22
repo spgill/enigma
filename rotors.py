@@ -1,4 +1,16 @@
+# stdlib module imports
 import sys
+
+# third-party module imports
+import colorama
+
+
+def vbprint(template, args=[], kwargs={}):
+    """Format and print a message to stderr if verbosity is enabled"""
+    global ENIGMA_verbose
+    if ENIGMA_verbose:
+        sys.stderr.write(template.format(*args, **kwargs) + '\n')
+
 
 def stringToRotor(s):
     '''Turn a string into an instantiated rotor'''
@@ -60,6 +72,9 @@ class _RotorBase:
         else:
             self.setting = 0  # A
 
+        # Initial verbosity flag
+        self.verbose = False
+
         # Initialize and program wiring matrices
         self.wiring_forward = list(range(26))
         self.wiring_reverse = list(range(26))
@@ -91,6 +106,21 @@ class _RotorBase:
             if n < 0:
                 n += 26
         return n
+
+    def vprint(self, template, args=[], kwargs={}):
+        """Format and print a message to stderr if verbosity is enabled"""
+        if self.verbose:
+            kwargs.update({
+                'self': self,
+                'B': colorama.Back,
+                'F': colorama.Fore,
+                'S': colorama.Style
+            })
+            pre = '|{F.GREEN}{self._short:>10}{F.WHITE}: '
+            sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
+
+    def verbose_soundoff(self):
+        self.vprint('Verbosity enabled')
 
     def step(self):
         '''

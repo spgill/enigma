@@ -1,8 +1,9 @@
 # stdlib imports
 import pickle
+import sys
 
 # third party imports
-# import colorama
+import colorama
 
 # local module imports
 import enigma.rotors as rotors
@@ -16,13 +17,15 @@ class Machine:
             plugboardStack=[],
             rotorStack=[],
             reflector=None,
-            state=None
+            state=None,
+            verbose=False
             ):
         """Initialize Enigma Machine with all it's instantiated components"""
         # Initialize the empty variables
         self.plugboard = []
         self.rotors = []
         self.reflector = None
+        self.verbose = verbose
 
         # Unpack the state
         if state:
@@ -33,6 +36,9 @@ class Machine:
             self._initPlugboard(plugboardStack)
             self._initRotors(rotorStack)
             self._initReflector(reflector)
+
+        # initialize verbosity
+        self._initVerbosity()
 
         # go ahead and set a break point
         self.breakSet()
@@ -83,6 +89,20 @@ class Machine:
         # else, throw a hissy
         raise TypeError('Unknown type of reflector passed into the machine')
 
+    def _initVerbosity(self):
+        """Copy the machine's verbose flag to the rotors and the reflector"""
+        # Let 'em know
+        self.vprint('Verbosity enabled')
+
+        # copy to rotors and the reflector
+        self.vprint('Copying verbose flag to rotors and the reflector')
+        colorama.init()
+        for r in self.rotors:
+            r.verbose = self.verbose
+            r.verbose_soundoff()
+        self.reflector.verbose = self.verbose
+        self.reflector.verbose_soundoff()
+
     def _checkChar(self, c):
         '''Check a one-character string for enigma compatibility'''
         assert isinstance(c, str)
@@ -94,6 +114,18 @@ class Machine:
             raise ValueError(c + ' is not an Enigma compatible character')
 
         return c
+
+    def vprint(self, template, args=[], kwargs={}):
+        """Format and print a message to stderr if verbosity is enabled"""
+        if self.verbose:
+            kwargs.update({
+                'self': self,
+                'B': colorama.Back,
+                'F': colorama.Fore,
+                'S': colorama.Style
+            })
+            pre = '|{F.GREEN}   machine{F.WHITE}: '
+            sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
 
     def stateGet(self):
         '''Get a serialized state of the machine. (the 'settings')'''

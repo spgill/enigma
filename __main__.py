@@ -40,7 +40,8 @@ def run_cli(args):
         machine = enigma.machine.Machine(
             args.plugboard,
             args.rotors,
-            args.reflector
+            args.reflector,
+            verbose=args.verbose
         )
 
     # If a state file needs to be created, save it and exit
@@ -321,6 +322,14 @@ parser_cli.add_argument(
     required=False,
     help="""
     Suppress the progress meter that is normal written to stderr.
+    """
+)
+parser_cli.add_argument(
+    '--verbose', '-v',
+    action='store_true',
+    required=False,
+    help="""
+    Enable verbosity; printing LOTS of messages to stderr.
     """
 )
 
