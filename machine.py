@@ -117,7 +117,7 @@ class Machine:
 
     def vprint(self, template, args=[], kwargs={}):
         """Format and print a message to stderr if verbosity is enabled"""
-        it not self.verbose: return False
+        if not self.verbose: return False
 
         kwargs.update({
             'self': self,
