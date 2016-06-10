@@ -168,6 +168,8 @@ def run_cli(args):
 
 def run_gui(args):
     """Run the Enigma Machine using the Graphical User Interface"""
+    print('GUI is currently non-functional. Exiting...')
+    exit()
     machine_gui.main()
 
 
