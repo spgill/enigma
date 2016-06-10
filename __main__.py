@@ -3,6 +3,7 @@ import argparse
 import bz2
 import datetime
 import io
+import re
 import sys
 
 # local module imports
@@ -102,6 +103,9 @@ def run_cli(args):
     input_size = input_file.tell()
     input_file.seek(0)
 
+    # sanitization pattern
+    re_sanitize = re.compile(r'[\W\d_]')
+
     time_start = datetime.datetime.utcnow()
 
     # Now it's time to do the dirty work...
@@ -113,6 +117,11 @@ def run_cli(args):
             byte_count += len(chunk)
 
             chunk = chunk.decode()
+
+            # sanitization
+            if args.sanitize:
+                chunk = re_sanitize.sub('', chunk).upper()
+
             chunk = machine.transcodeString(chunk, skip_invalid=True)
             chunk = chunk.encode()
 
@@ -322,6 +331,14 @@ parser_cli.add_argument(
     required=False,
     help="""
     Suppress the progress meter that is normal written to stderr.
+    """
+)
+parser_cli.add_argument(
+    '--sanitize', '-sa',
+    action='store_true',
+    required=False,
+    help="""
+    Sanitize input to resemble typical enigma text (alpha, caps, and no space).
     """
 )
 parser_cli.add_argument(
