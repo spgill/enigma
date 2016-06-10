@@ -99,7 +99,7 @@ class _RotorBase:
         return s[n:] + s[0:n]
 
     def _loop(self, n):
-        '''Constrain a number N such that 0 <= N <= 25'''
+        '''Constrain a number N such that 0 <= N <= 25 in a circular fashion'''
         while n < 0 or n > 25:
             if n > 25:
                 n -= 26
