@@ -117,15 +117,17 @@ class Machine:
 
     def vprint(self, template, args=[], kwargs={}):
         """Format and print a message to stderr if verbosity is enabled"""
-        if self.verbose:
-            kwargs.update({
-                'self': self,
-                'B': colorama.Back,
-                'F': colorama.Fore,
-                'S': colorama.Style
-            })
-            pre = '|{F.GREEN}   machine{F.WHITE}:'
-            sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
+        it not self.verbose: return False
+
+        kwargs.update({
+            'self': self,
+            'B': colorama.Back,
+            'F': colorama.Fore,
+            'S': colorama.Style
+        })
+        pre = '|{F.GREEN}   machine{F.WHITE}:'
+        sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
+        return True
 
     def stateGet(self):
         '''Get a serialized state of the machine. (the 'settings')'''
