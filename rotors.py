@@ -116,7 +116,7 @@ class _RotorBase:
                 'F': colorama.Fore,
                 'S': colorama.Style
             })
-            pre = '|{F.GREEN}{self._short:>10}{F.WHITE}: '
+            pre = '|{F.GREEN}{self._short:>10}{F.WHITE}:'
             sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
 
     def verbose_soundoff(self):

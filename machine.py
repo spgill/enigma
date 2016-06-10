@@ -124,7 +124,7 @@ class Machine:
                 'F': colorama.Fore,
                 'S': colorama.Style
             })
-            pre = '|{F.GREEN}   machine{F.WHITE}: '
+            pre = '|{F.GREEN}   machine{F.WHITE}:'
             sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
 
     def stateGet(self):
@@ -161,13 +161,19 @@ class Machine:
         traces instead of just the transformed characters.
         '''
 
+        self.vprint('Stream received for transcoding')
+
         # start iterating through the incoming stream
         for char_in in stream:
+            self.vprint('Character {0!r}', [char_in])
+
+            self.vprint('  Checking character validity')
             # check the character
             if skip_invalid:
                 try:
                     char = self._checkChar(char_in)
                 except ValueError:
+                    self.vprint('  Ignoring invalid character')
                     yield char_in
                     continue
             else:
@@ -175,27 +181,53 @@ class Machine:
 
             # convert it into a pin and run it through the plugboard
             pin = rotors._RotorBase._abet.index(char)
+            self.vprint('  Converted to pin {0!r}', [pin])
             pin = self.plugboard[pin]
+            self.vprint('  Plugboard to pin {0!r}', [pin])
 
             # iterate through roters in forward order
             stack = []
             for rotor in self.rotors:
                 # translate the pin forward through the rotor
+                self.vprint(
+                    '  Sending pin {0!r} forward thru {F.GREEN}{1}{F.WHITE}',
+                    [pin, rotor._short]
+                )
                 newpin = rotor.translate_forward(pin)
+                self.vprint(
+                    '  Received pin {0!r} from {F.GREEN}{1}{F.WHITE}',
+                    [newpin, rotor._short]
+                )
 
                 # log the translation
                 stack.append((pin, newpin))
                 pin = newpin
 
             # reflect the pin through the reflector and log it
+            self.vprint(
+                '  Sending pin {0!r} thru {F.GREEN}{1}{F.WHITE}',
+                [pin, self.reflector._short]
+            )
             newpin = self.reflector.translate_forward(pin)
+            self.vprint(
+                '  Received pin {0!r} from {F.GREEN}{1}{F.WHITE}',
+                [newpin, self.reflector._short]
+            )
             stack.append((pin, newpin))
             pin = newpin
 
             # iterate through the rotors in reverse
             for rotor in reversed(self.rotors):
                 # translate the pin in reverse
+                self.vprint(
+                    '  Sending pin {0!r} reverse thru {F.GREEN}{1}{F.WHITE}',
+                    [pin, rotor._short]
+                )
                 newpin = rotor.translate_reverse(pin)
+                self.vprint(
+                    '  Received pin {0!r} from {F.GREEN}{1}{F.WHITE}',
+                    [newpin, rotor._short]
+                )
 
                 # log the translation
                 stack.append((pin, newpin))
