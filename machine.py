@@ -104,16 +104,20 @@ class Machine:
         self.reflector.verbose_soundoff()
 
     def _checkChar(self, c):
-        '''Check a one-character string for enigma compatibility'''
-        assert isinstance(c, str)
-        assert len(c) == 1
-        c = c.upper()
+        '''Sanitize a single character'''
+        value = ord(c)
 
-        # Check the character is in the alphabet
-        if c not in rotors._RotorBase._abet:
-            raise ValueError(c + ' is not an Enigma compatible character')
+        # Uppercase alpha. Good to go.
+        if value >= 65 and value <= 90:
+            return chr(value)
 
-        return c
+        # Lowercase alpha. Let's capitalize it.
+        elif value >= 97 and value <= 122:
+            return chr(value - 32)
+
+        # Invalid character.
+        else:
+            return False
 
     def vprint(self, template, args=[], kwargs={}):
         """Format and print a message to stderr if verbosity is enabled"""
@@ -154,7 +158,7 @@ class Machine:
         assert hasattr(self, '_breakstate')
         self.stateSet(self._breakstate)
 
-    def transcode(self, stream, skip_invalid=False, trace=False):
+    def transcode(self, stream, sanitize=False, trace=False):
         '''
         Transcode any object of iterable strings through
         the plugboard, rotors, reflector, and back out.
@@ -169,17 +173,15 @@ class Machine:
         for char_in in stream:
             self.vprint('Character {0!r}', [char_in])
 
-            self.vprint('  Checking character validity')
             # check the character
-            if skip_invalid:
-                try:
-                    char = self._checkChar(char_in)
-                except ValueError:
+            char = self._checkChar(char_in)
+            if not char:
+                if not sanitize:
                     self.vprint('  Ignoring invalid character')
                     yield char_in
-                    continue
-            else:
-                char = self._checkChar(char_in)
+                else:
+                    self.vprint('  Skipping invalid character')
+                continue
 
             # convert it into a pin and run it through the plugboard
             pin = rotors._RotorBase._abet.index(char)
@@ -248,7 +250,7 @@ class Machine:
 
             # get the resulting character
             char_out = rotors._RotorBase._abet[pin]
-            if char_in.islower():
+            if not sanitize and char_in.islower():
                 char_out = char_out.lower()
 
             # if a trace is required, yield that

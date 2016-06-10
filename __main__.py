@@ -103,9 +103,6 @@ def run_cli(args):
     input_size = input_file.tell()
     input_file.seek(0)
 
-    # sanitization pattern
-    re_sanitize = re.compile(r'[\W\d_]')
-
     time_start = datetime.datetime.utcnow()
 
     # Now it's time to do the dirty work...
@@ -118,11 +115,7 @@ def run_cli(args):
 
             chunk = chunk.decode()
 
-            # sanitization
-            if args.sanitize:
-                chunk = re_sanitize.sub('', chunk).upper()
-
-            chunk = machine.transcodeString(chunk, skip_invalid=True)
+            chunk = machine.transcodeString(chunk, sanitize=args.sanitize)
             chunk = chunk.encode()
 
             output_file.write(chunk)
