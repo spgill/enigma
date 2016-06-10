@@ -141,19 +141,13 @@ class _RotorBase:
 
     def translate_forward(self, pin_in):
         '''Translate one pin through this rotor in first pass mode.'''
-        # char = self.abet[pin_in]
-        # pin_out = self.wiring.index(char)
-        # return pin_out
-        mod = self.wiring_forward[self._loop(pin_in + self.setting)]
-        return self._loop(pin_in + self.setting + mod)
+        modifier = self.wiring_forward[self._loop(pin_in + self.setting)]
+        return self._loop(pin_in + modifier)
 
     def translate_reverse(self, pin_in):
         '''Translate one pin through this rotor in reverse pass mode.'''
-        # char = self.wiring[pin_in]
-        # pin_out = self.abet.index(char)
-        # return pin_out
-        mod = self.wiring_reverse[self._loop(pin_in + self.setting)]
-        return self._loop(pin_in + self.setting + mod)
+        modifier = self.wiring_reverse[self._loop(pin_in + self.setting)]
+        return self._loop(pin_in + modifier)
 
 
 class _ReflectorBase(_RotorBase):
