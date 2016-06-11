@@ -1,4 +1,5 @@
 # stdlib imports
+import io
 import pickle
 import sys
 
@@ -264,3 +265,33 @@ class Machine:
     def transcodeString(self, s, **kwargs):
         """Transcode and return a string"""
         return ''.join(self.transcode(s, **kwargs))
+
+    def _readChunks(self, stream, chunkSize):
+        """Yield discrete chunks from a stream."""
+        while True:
+            data = stream.read(chunkSize)
+            if not data:
+                break
+            yield data
+
+    def transcodeStream(
+            self,
+            stream_in,
+            stream_out=None,
+            chunkSize=128,
+            **kwargs
+            ):
+        """Transcode a stream (file-like object) chunk by chunk."""
+        # If no outgoing stream is specified, make one
+        if not stream_out:
+            stream_out = io.StringIO()
+
+        # Iterate through chunks
+        for chunk_in in self._readChunks(stream_in, chunkSize):
+            chunk_out = str()
+            for char in self.transcode(chunk_in, **kwargs):
+                chunk_out += char
+            stream_out.write(chunk_out)
+
+        # Return the outgoing stream (in case one wasn't passed in)
+        return stream_out
