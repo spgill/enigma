@@ -160,7 +160,7 @@ class Machine:
 
     def transcode(self, stream, sanitize=False, trace=False):
         '''
-        Transcode any object of iterable strings through
+        Transcode any iterable object of string characters through
         the plugboard, rotors, reflector, and back out.
 
         Optionally, you can have the generator yield transformation
