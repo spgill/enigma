@@ -262,4 +262,5 @@ class Machine:
                 yield char_out
 
     def transcodeString(self, s, **kwargs):
+        """Transcode and return a string"""
         return ''.join(self.transcode(s, **kwargs))
