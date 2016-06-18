@@ -84,7 +84,10 @@ def run_cli(args):
                 char_out = b''
 
             else:
-                char_out = machine.translateChunk(char_in)
+                char_out = machine.translateChunk(
+                    char_in,
+                    sanitize=args.sanitize
+                )
 
             sys.stdout.buffer.write(char_out)
             sys.stdout.flush()
