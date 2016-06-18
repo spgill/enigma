@@ -272,6 +272,13 @@ class Machine:
                 break
             yield data
 
+    def _streamSize(self, stream):
+        """Return the size of a stream in bytes"""
+        stream.seek(0, 2)
+        size = stream.tell()
+        stream.seek(0)
+        return size
+
     def transcodeStream(
             self,
             stream_in,
@@ -282,9 +289,7 @@ class Machine:
             ):
         """Transcode a stream (file-like object) chunk by chunk."""
         # Figure out the size of the input stream
-        stream_in.seek(0, 2)
-        stream_in_size = stream_in.tell()
-        stream_in.seek(0)
+        stream_in_size = self._streamSize(stream_in)
 
         # If no outgoing stream is specified, make one
         if not stream_out:
