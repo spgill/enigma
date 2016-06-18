@@ -1,6 +1,7 @@
 # stdlib imports
 import io
 import pickle
+import random
 import sys
 
 # third party imports
@@ -19,6 +20,7 @@ class Machine:
             rotorStack=[],
             reflector=None,
             state=None,
+            stateSeed='',
             verbose=False
             ):
         """Initialize Enigma Machine with all it's instantiated components"""
@@ -31,6 +33,10 @@ class Machine:
         # Unpack the state
         if state:
             self.stateSet(state)
+
+        # If seed is present, generate randomized state
+        elif stateSeed:
+            self.stateRandom(stateSeed)
 
         # or unpack the args into the class
         else:
@@ -147,6 +153,42 @@ class Machine:
             self.rotors,
             self.reflector
         ) = pickle.loads(state)
+
+    def stateRandom(self, seed):
+        """Randomly generate a state from a string seed"""
+        # Seed the random generator
+        random.seed(seed)
+
+        # Generate a random plugboard
+        plugboardStack = []
+        abet = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        for i in range(random.randint(0, 13)):
+            pair = ''
+            for j in range(2):
+                k = random.randrange(0, len(abet))
+                pair += abet[k]
+                del abet[k]
+            plugboardStack.append(pair)
+        self._initPlugboard(plugboardStack)
+
+        # Generate random rotors (there will always be three)
+        rotorStack = []
+        abet = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        rotorNames = sorted([r._short for r in rotors._RotorBase.__subclasses__()])
+        rotorNames.remove('base-ref')
+        for i in range(3):
+            rotor = '{0}:{1}:{2}'.format(
+                random.choice(rotorNames),
+                random.choice(abet),
+                random.choice(abet)
+            )
+            rotorStack.append(rotor)
+        self._initRotors(rotorStack)
+
+        # Pick a random reflector
+        reflNames = sorted([r._short for r in rotors._ReflectorBase.__subclasses__()])
+        reflector = random.choice(reflNames)
+        self._initReflector(reflector)
 
     def breakSet(self):
         '''Save the current state to be easily returned to later'''

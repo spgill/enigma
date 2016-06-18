@@ -35,6 +35,8 @@ def run_cli(args):
     if args.state_path and not args.state_create:
         state = bz2.open(args.state_path, 'rb').read()
         machine = enigma.machine.Machine(state=state)
+    elif args.state_seed:
+        machine = enigma.machine.Machine(stateSeed=args.state_seed)
     else:
         if not args.rotors or not args.reflector:
             raise ValueError('Rotors and reflectors were not provided')
@@ -231,6 +233,15 @@ def main():
         required=False,
         help="""
         Print the state information to stdout and exit.
+        """
+    )
+    parser_cli.add_argument(
+        '--state-seed', '-ss',
+        type=str,
+        default='',
+        required=False,
+        help="""
+        String seed for a randomly generated state.
         """
     )
 
