@@ -56,7 +56,7 @@ def run_cli(args):
             print(
                 'ROTOR:', i + 1, rotor._name,
                 'SETTING:', rotor._abet[rotor.setting],
-                'NOTCHES:', rotor.notches
+                'NOTCHES:', ', '.join([rotor._abet[n] for n in rotor.notches])
             )
         print('REFLECTOR:', machine.reflector._name)
         # print('RAW:', machine.stateGet())
