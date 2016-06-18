@@ -106,15 +106,13 @@ class Machine:
 
     def _checkChar(self, c):
         '''Sanitize a single character'''
-        value = ord(c)
-
         # Uppercase alpha. Good to go.
-        if value >= 65 and value <= 90:
-            return chr(value)
+        if c >= 65 and c <= 90:
+            return c
 
         # Lowercase alpha. Let's capitalize it.
-        elif value >= 97 and value <= 122:
-            return chr(value - 32)
+        elif c >= 97 and c <= 122:
+            return c - 32
 
         # Invalid character.
         else:
@@ -185,7 +183,7 @@ class Machine:
                 continue
 
             # convert it into a pin and run it through the plugboard
-            pin = rotors._RotorBase._abet.index(char)
+            pin = char - 65
             self.vprint('  Converted to pin {0!r}', [pin])
             pin = self.plugboard[pin]
             self.vprint('  Plugboard to pin {0!r}', [pin])
@@ -250,9 +248,9 @@ class Machine:
             pin = self.plugboard[pin]
 
             # get the resulting character
-            char_out = rotors._RotorBase._abet[pin]
-            if not sanitize and char_in.islower():
-                char_out = char_out.lower()
+            char_out = pin + 65
+            if not sanitize and char_in > 90:
+                char_out += 32
 
             # if a trace is required, yield that
             if trace:
@@ -278,20 +276,34 @@ class Machine:
             self,
             stream_in,
             stream_out=None,
+            progressCallback=None,
             chunkSize=128,
             **kwargs
             ):
         """Transcode a stream (file-like object) chunk by chunk."""
+        # Figure out the size of the input stream
+        stream_in.seek(0, 2)
+        stream_in_size = stream_in.tell()
+        stream_in.seek(0)
+
         # If no outgoing stream is specified, make one
         if not stream_out:
             stream_out = io.StringIO()
+        stream_out_size = 0
+
+        # Make the initial call to the progress function
+        if progressCallback:
+            progressCallback(stream_out_size, stream_in_size)
 
         # Iterate through chunks
         for chunk_in in self._readChunks(stream_in, chunkSize):
-            chunk_out = str()
+            chunk_out = bytes()
             for char in self.transcode(chunk_in, **kwargs):
-                chunk_out += char
+                chunk_out += bytes([char])
             stream_out.write(chunk_out)
+            stream_out_size += chunkSize
+            if progressCallback:
+                progressCallback(stream_out_size, stream_in_size)
 
         # Return the outgoing stream (in case one wasn't passed in)
         return stream_out

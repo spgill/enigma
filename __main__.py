@@ -105,33 +105,24 @@ def run_cli(args):
 
     time_start = datetime.datetime.utcnow()
 
-    # Now it's time to do the dirty work...
-    byte_count = 0
-    while True:
-        # read a chunk and process it
-        chunk = input_file.read(args.chunk_size)
-        if chunk:
-            byte_count += len(chunk)
+    # Progress callback
+    def callback(current, total):
+        rs = ''.join([r._abet[r.setting] for r in machine.rotors])
+        sys.stderr.write(
+            'ROTORS: ' + rs + '    ' +
+            'PROGRESS: ' + str(int(current / total * 100.0)) + '%\r'
+        )
 
-            chunk = chunk.decode()
+    # Flip it off if needed
+    if args.no_progress:
+        callback = None
 
-            chunk = machine.transcodeString(chunk, sanitize=args.sanitize)
-            chunk = chunk.encode()
-
-            output_file.write(chunk)
-
-            progress = int(byte_count / input_size * 100.0)
-            if not args.no_progress:
-                rs = ''.join([r._abet[r.setting] for r in machine.rotors])
-                sys.stderr.write(
-                    'ROTORS: ' + rs + '    ' +
-                    'PROGRESS: ' + str(progress) + '%\r'
-                )
-
-        # if no chunk was found, that means we're all done
-        else:
-            print()
-            break
+    machine.transcodeStream(
+        stream_in=input_file,
+        stream_out=output_file,
+        chunkSize=args.chunk_size,
+        progressCallback=callback
+    )
 
     # Final compression bit
     if args.output_bz2:
