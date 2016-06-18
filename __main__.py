@@ -117,7 +117,7 @@ def run_cli(args):
     if args.no_progress:
         callback = None
 
-    machine.transcodeStream(
+    machine.translateStream(
         stream_in=input_file,
         stream_out=output_file,
         chunkSize=args.chunk_size,

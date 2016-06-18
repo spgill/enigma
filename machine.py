@@ -104,15 +104,15 @@ class Machine:
         self.reflector.verbose = self.verbose
         self.reflector.verbose_soundoff()
 
-    def _checkChar(self, c):
+    def _checkByte(self, b):
         '''Sanitize a single character'''
         # Uppercase alpha. Good to go.
-        if c >= 65 and c <= 90:
-            return c
+        if b >= 65 and b <= 90:
+            return b
 
         # Lowercase alpha. Let's capitalize it.
-        elif c >= 97 and c <= 122:
-            return c - 32
+        elif b >= 97 and b <= 122:
+                return b - 32
 
         # Invalid character.
         else:
@@ -166,107 +166,71 @@ class Machine:
                 if not step:
                     break
 
-    def transcode(self, stream, sanitize=False, trace=False):
-        '''
-        Transcode any iterable object of string characters through
-        the plugboard, rotors, reflector, and back out.
+    def translatePin(self, pin):
+        """
+        Translate a singular pin (as an integer) through the plugboard,
+        rotors, reflector, and back again.
+        """
+        # Forward through the plugboard
+        pin = self.plugboard[pin]
 
-        Optionally, you can have the generator yield transformation
-        traces instead of just the transformed characters.
-        '''
+        # Forward through the rotors
+        for rotor in self.rotors:
+            pin = rotor.translateForward(pin)
 
-        self.vprint('Stream received for transcoding')
+        # Reflect it
+        pin = self.reflector.translateForward(pin)
 
-        # start iterating through the incoming stream
-        for char_in in stream:
-            self.vprint('Character {0!r}', [char_in])
+        # Backwards through the rotors
+        for rotor in reversed(self.rotors):
+            pin = rotor.translateReverse(pin)
 
-            # check the character
-            char = self._checkChar(char_in)
-            if not char:
+        # Backwards through the plugboard
+        pin = self.plugboard[pin]
+
+        # Step the rotors
+        self.stepRotors()
+
+        # Return the fruits of our labor
+        return pin
+
+    def translateChunk(self, chunk_in, sanitize=False):
+        """
+        Translate a non-empty bytes or bytearray object through the machine.
+        """
+        # Initialize the outgoing chunk
+        chunk_out = bytearray()
+
+        # Iterate through every byte in the incoming chunk
+        for byte_in in chunk_in:
+
+            # Check the byte
+            byte_out = self._checkByte(byte_in)
+            if not byte_out:
                 if not sanitize:
-                    self.vprint('  Ignoring invalid character')
-                    yield char_in
-                else:
-                    self.vprint('  Skipping invalid character')
+                    chunk_out.append(byte_in)
                 continue
 
-            # convert it into a pin and run it through the plugboard
-            pin = char - 65
-            self.vprint('  Converted to pin {0!r}', [pin])
-            pin = self.plugboard[pin]
-            self.vprint('  Plugboard to pin {0!r}', [pin])
+            # Convert the byte to a pin
+            byte_out -= 65
 
-            # iterate through roters in forward order
-            stack = []
-            for rotor in self.rotors:
-                # translate the pin forward through the rotor
-                self.vprint(
-                    '  Sending pin {0!r} forward thru {F.GREEN}{1}{F.WHITE}',
-                    [pin, rotor._short]
-                )
-                newpin = rotor.translate_forward(pin)
-                self.vprint(
-                    '  Received pin {0!r} from {F.GREEN}{1}{F.WHITE}',
-                    [newpin, rotor._short]
-                )
+            # Run it through the machine
+            byte_out = self.translatePin(byte_out)
 
-                # log the translation
-                stack.append((pin, newpin))
-                pin = newpin
+            # Convert it back into a byte
+            byte_out += 65
+            if not sanitize and byte_in > 90:
+                byte_out += 32
 
-            # reflect the pin through the reflector and log it
-            self.vprint(
-                '  Sending pin {0!r} thru {F.GREEN}{1}{F.WHITE}',
-                [pin, self.reflector._short]
-            )
-            newpin = self.reflector.translate_forward(pin)
-            self.vprint(
-                '  Received pin {0!r} from {F.GREEN}{1}{F.WHITE}',
-                [newpin, self.reflector._short]
-            )
-            stack.append((pin, newpin))
-            pin = newpin
+            # Append it to the array
+            chunk_out.append(byte_out)
 
-            # iterate through the rotors in reverse
-            for rotor in reversed(self.rotors):
-                # translate the pin in reverse
-                self.vprint(
-                    '  Sending pin {0!r} reverse thru {F.GREEN}{1}{F.WHITE}',
-                    [pin, rotor._short]
-                )
-                newpin = rotor.translate_reverse(pin)
-                self.vprint(
-                    '  Received pin {0!r} from {F.GREEN}{1}{F.WHITE}',
-                    [newpin, rotor._short]
-                )
+        # Return the processed chunk
+        return chunk_out
 
-                # log the translation
-                stack.append((pin, newpin))
-                pin = newpin
-
-            # step the rotors in order
-            self.stepRotors()
-
-            # Run the pin back through the plugboard again
-            pin = self.plugboard[pin]
-
-            # get the resulting character
-            char_out = pin + 65
-            if not sanitize and char_in > 90:
-                char_out += 32
-
-            # if a trace is required, yield that
-            if trace:
-                yield stack + [char_out]
-
-            # if a character is required, yield THAT
-            else:
-                yield char_out
-
-    def transcodeString(self, s, **kwargs):
-        """Transcode and return a string"""
-        return ''.join(self.transcode(s, **kwargs))
+    def translateString(self, s, **kwargs):
+        """Lazy method to translate a string"""
+        return str(self.translateChunk(bytes(s), **kwargs))
 
     def _readChunks(self, stream, chunkSize):
         """Yield discrete chunks from a stream."""
@@ -283,7 +247,7 @@ class Machine:
         stream.seek(0)
         return size
 
-    def transcodeStream(
+    def translateStream(
             self,
             stream_in,
             stream_out=None,
@@ -291,7 +255,7 @@ class Machine:
             chunkSize=128,
             **kwargs
             ):
-        """Transcode a stream (file-like object) chunk by chunk."""
+        """Translate a stream (file-like object) chunk by chunk."""
         # Figure out the size of the input stream
         stream_in_size = self._streamSize(stream_in)
 
@@ -306,9 +270,7 @@ class Machine:
 
         # Iterate through chunks
         for chunk_in in self._readChunks(stream_in, chunkSize):
-            chunk_out = bytes()
-            for char in self.transcode(chunk_in, **kwargs):
-                chunk_out += bytes([char])
+            chunk_out = self.translateChunk(chunk_in, **kwargs)
             stream_out.write(chunk_out)
             stream_out_size += chunkSize
             if progressCallback:

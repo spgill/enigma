@@ -139,12 +139,12 @@ class _RotorBase:
         # return the flag
         return notch
 
-    def translate_forward(self, pin_in):
+    def translateForward(self, pin_in):
         '''Translate one pin through this rotor in first pass mode.'''
         modifier = self.wiring_forward[self._loop(pin_in + self.setting)]
         return self._loop(pin_in + modifier)
 
-    def translate_reverse(self, pin_in):
+    def translateReverse(self, pin_in):
         '''Translate one pin through this rotor in reverse pass mode.'''
         modifier = self.wiring_reverse[self._loop(pin_in + self.setting)]
         return self._loop(pin_in + modifier)
@@ -169,7 +169,7 @@ class _ReflectorBase(_RotorBase):
 
     # Equate the bad functions as 'no-no' functions so they'll throw errors
     step = nono
-    translate_reverse = nono
+    translateReverse = nono
 
 
 # # # rotors # # #
