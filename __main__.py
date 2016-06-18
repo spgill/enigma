@@ -64,6 +64,34 @@ def run_cli(args):
         # print('RAW:', machine.stateGet())
         return
 
+    # Typewriter mode
+    if args.typewriter:
+        print('Welcome to typewriter mode! To begin transcoding, just type!')
+        print('Press Ctrl+C to exit. (backspace and arrow keys will not work)')
+        print()
+
+        import msvcrt
+        char_in = msvcrt.getch()
+
+        while char_in != b'\x03':
+
+            char_out = char_in
+
+            if char_in == b'\r':
+                char_out = b'\r\n'
+
+            elif char_in == b'\x08':
+                char_out = b''
+
+            else:
+                char_out = machine.translateChunk(char_in)
+
+            sys.stdout.buffer.write(char_out)
+            sys.stdout.flush()
+            char_in = msvcrt.getch()
+
+        return
+
     # Work out the input
     input_file = None
 
@@ -347,6 +375,16 @@ def main():
         required=False,
         help="""
         Enable verbosity; printing LOTS of messages to stderr.
+        """
+    )
+    parser_cli.add_argument(
+        '--typewriter', '-t',
+        action='store_true',
+        required=False,
+        help="""
+        Enable typewriter mode. Press a key, and the translated key is written
+        to the console; similar to an actual enigma machine. Not particularly
+        useful, just really cool to play with. (currently Windows only)
         """
     )
 
