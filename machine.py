@@ -157,6 +157,15 @@ class Machine:
         assert hasattr(self, '_breakstate')
         self.stateSet(self._breakstate)
 
+    def stepRotors(self):
+        """Step the machine's rotors once, in order."""
+        step = True
+        for rotor in self.rotors:
+            if step:
+                step = rotor.step()
+                if not step:
+                    break
+
     def transcode(self, stream, sanitize=False, trace=False):
         '''
         Transcode any iterable object of string characters through
@@ -237,12 +246,7 @@ class Machine:
                 pin = newpin
 
             # step the rotors in order
-            step = True
-            for rotor in self.rotors:
-                if step:
-                    step = rotor.step()
-                    if not step:
-                        break
+            self.stepRotors()
 
             # Run the pin back through the plugboard again
             pin = self.plugboard[pin]
