@@ -288,7 +288,7 @@ class Machine:
 
         # If no outgoing stream is specified, make one
         if not stream_out:
-            stream_out = io.StringIO()
+            stream_out = io.BytesIO()
         stream_out_size = 0
 
         # Make the initial call to the progress function
