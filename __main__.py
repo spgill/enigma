@@ -121,7 +121,8 @@ def run_cli(args):
         stream_in=input_file,
         stream_out=output_file,
         chunkSize=args.chunk_size,
-        progressCallback=callback
+        progressCallback=callback,
+        sanitize=args.sanitize
     )
 
     # Final compression bit
