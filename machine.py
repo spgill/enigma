@@ -126,7 +126,8 @@ class Machine:
 
     def vprint(self, template, args=[], kwargs={}):
         """Format and print a message to stderr if verbosity is enabled"""
-        if not self.verbose: return False
+        if not self.verbose:
+            return False
 
         kwargs.update({
             'self': self,
@@ -174,7 +175,9 @@ class Machine:
         # Generate random rotors (there will always be three)
         rotorStack = []
         abet = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-        rotorNames = sorted([r._short for r in rotors._RotorBase.__subclasses__()])
+        rotorNames = sorted(
+            [r._short for r in rotors._RotorBase.__subclasses__()]
+        )
         rotorNames.remove('base-ref')
         for i in range(3):
             rotor = '{0}:{1}:{2}'.format(
@@ -186,7 +189,9 @@ class Machine:
         self._initRotors(rotorStack)
 
         # Pick a random reflector
-        reflNames = sorted([r._short for r in rotors._ReflectorBase.__subclasses__()])
+        reflNames = sorted(
+            [r._short for r in rotors._ReflectorBase.__subclasses__()]
+        )
         reflector = random.choice(reflNames)
         self._initReflector(reflector)
 
