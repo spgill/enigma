@@ -6,7 +6,7 @@ import io
 import sys
 
 # local module imports
-import enigma.machine
+import machine as emachine
 import rotors
 
 
@@ -230,13 +230,13 @@ def main():
     machine = None
     if args.state_path and not args.state_create:
         state = bz2.open(args.state_path, 'rb').read()
-        machine = enigma.machine.Machine(state=state)
+        machine = emachine.Machine(state=state)
     elif args.state_seed:
-        machine = enigma.machine.Machine(stateSeed=args.state_seed)
+        machine = emachine.Machine(stateSeed=args.state_seed)
     else:
         if not args.rotors or not args.reflector:
             raise ValueError('Rotors and reflectors were not provided')
-        machine = enigma.machine.Machine(
+        machine = emachine.Machine(
             args.plugboard,
             args.rotors,
             args.reflector,
