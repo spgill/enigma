@@ -40,7 +40,6 @@ def stringToRotor(s):
 
 def stringToReflector(s):
     '''Turn a string into an instantiated reflector'''
-    print('LOOKING UP REF', s)
     # Get all immediate subclasses of the reflector base class
     classes = _ReflectorBase.__subclasses__() + _ByteReflectorBase.__subclasses__()
     reflector = None
