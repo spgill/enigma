@@ -15,7 +15,7 @@ def vbprint(template, args=[], kwargs={}):
 def stringToRotor(s):
     '''Turn a string into an instantiated rotor'''
     # Get all immediate subclasses of the rotor base class
-    classes = _RotorBase.__subclasses__()
+    classes = _RotorBase.__subclasses__() + _ByteRotorBase.__subclasses__()
 
     # split the argument into name and settings
     split = s.split(':')
@@ -40,8 +40,9 @@ def stringToRotor(s):
 
 def stringToReflector(s):
     '''Turn a string into an instantiated reflector'''
+    print('LOOKING UP REF', s)
     # Get all immediate subclasses of the reflector base class
-    classes = _ReflectorBase.__subclasses__()
+    classes = _ReflectorBase.__subclasses__() + _ByteReflectorBase.__subclasses__()
     reflector = None
     for c in classes:
         if s == c._short:

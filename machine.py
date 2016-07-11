@@ -119,7 +119,6 @@ class Machine:
             # Append it, yo
             self.rotors.append(rotor)
 
-
     def _initReflector(self, reflector):
         '''Check to make sure a real reflector was passed in'''
         # if it's an actual reflector instance, keep on swimming
@@ -128,7 +127,7 @@ class Machine:
 
         # if it's a string, turn it into a reflector
         if isinstance(reflector, str):
-            self.reflector = rotors.stringToReflector(self.reflector)
+            self.reflector = rotors.stringToReflector(reflector)
 
         # Must be invalid then
         if self.reflector is None:
