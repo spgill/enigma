@@ -269,7 +269,7 @@ class Machine:
         rotors, reflector, and back again.
         """
         # Forward through the plugboard
-        # pin = self.plugboard[pin]
+        pin = self.plugboard[pin]
 
         # Forward through the rotors
         for rotor in self.rotors:
@@ -283,7 +283,7 @@ class Machine:
             pin = rotor.translateReverse(pin)
 
         # Backwards through the plugboard
-        # pin = self.plugboard[pin]
+        pin = self.plugboard[pin]
 
         # Step the rotors
         self.stepRotors()
@@ -291,7 +291,7 @@ class Machine:
         # Return the fruits of our labor
         return pin
 
-    def translateChunk(self, chunk_in, sanitize=False):
+    def translateChunk(self, chunk_in):
         """
         Translate a non-empty bytes or bytearray object through the machine.
         """
@@ -321,7 +321,7 @@ class Machine:
 
                 # Convert it back into a byte
                 byte_out += 65
-                if not sanitize and byte_in > 90:
+                if self.mode is Mode.modern and byte_in > 90:
                     byte_out += 32
 
                 # Append it to the array
