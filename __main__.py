@@ -63,7 +63,7 @@ def main():
 
     # State args
     parser.add_argument(
-        '--state-path', '-s',
+        '--state', '-s',
         type=str,
         default='',
         required=False,
@@ -168,6 +168,23 @@ def main():
         """
     )
 
+    # Mode argument(s)
+    parser.add_argument(
+        '--mode', '-m',
+        default='classic',
+        choices=['classic', 'modern', 'byte'],
+        required=False,
+        help="""
+        Which mode the enigma machine will operate in. (default: classic)
+        Classic mode will only process characters A through Z, will
+        capitalize lowercase letters, and will remove invalid ones.
+        Modern mode will preserve case, and invalid characters
+        will pass through unchanged (without affecting rotors).
+        Byte mode will process any 8-bit character, but REQUIRES that
+        byte-compatible rotors and reflectors be passed into the machine.
+        """
+    )
+
     # Other arguments
     parser.add_argument(
         '--chunk-size', '-c',
@@ -192,14 +209,6 @@ def main():
         required=False,
         help="""
         Suppress the progress meter that is normal written to stderr.
-        """
-    )
-    parser.add_argument(
-        '--sanitize', '-sa',
-        action='store_true',
-        required=False,
-        help="""
-        Sanitize input to resemble typical enigma text (alpha, caps, and no space).
         """
     )
     parser.add_argument(
@@ -228,24 +237,25 @@ def main():
 
     # Initialize the enigma machine using specified rotors or a state file
     machine = None
-    if args.state_path and not args.state_create:
-        state = bz2.open(args.state_path, 'rb').read()
-        machine = emachine.Machine(state=state)
+    if args.state and not args.state_create:
+        state = bz2.open(args.state, 'rb').read()
+        machine = emachine.Machine(mode=emachine.Mode[args.mode], state=state)
     elif args.state_seed:
         machine = emachine.Machine(stateSeed=args.state_seed)
     else:
         if not args.rotors or not args.reflector:
             raise ValueError('Rotors and reflectors were not provided')
         machine = emachine.Machine(
-            args.plugboard,
-            args.rotors,
-            args.reflector,
+            mode=emachine.Mode[args.mode],
+            plugboardStack=args.plugboard,
+            rotorStack=args.rotors,
+            reflector=args.reflector,
             verbose=args.verbose
         )
 
     # If a state file needs to be created, save it and exit
     if args.state_create:
-        return bz2.open(args.state_path, 'wb').write(machine.stateGet())
+        return bz2.open(args.state, 'wb').write(machine.stateGet())
 
     # If the state shall be printed, make it so, and exit
     if args.state_print:
@@ -350,8 +360,7 @@ def main():
         stream_in=input_file,
         stream_out=output_file,
         chunkSize=args.chunk_size,
-        progressCallback=callback,
-        sanitize=args.sanitize
+        progressCallback=callback
     )
 
     # Final compression bit
@@ -376,8 +385,8 @@ def main():
 
     # Write back to the state file if asked to
     if args.state_update:
-        if args.state_path:
-            open(args.state_path, 'wb').write(machine.stateGet())
+        if args.state:
+            open(args.state, 'wb').write(machine.stateGet())
 
 # Run if main
 if __name__ == '__main__':
