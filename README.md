@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/spgill/enigma/master/icon.png" style="width: 256px;">
+<img src="https://raw.githubusercontent.com/spgill/enigma/master/icon.png" height="256">
 Enigma Machine
 ===
 Simple simulation of classic enigma machine encryption mechanics, written in Python.
