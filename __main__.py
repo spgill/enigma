@@ -264,8 +264,7 @@ def main():
 
             else:
                 char_out = machine.translateChunk(
-                    char_in,
-                    sanitize=args.sanitize
+                    char_in
                 )
 
             sys.stdout.buffer.write(char_out)
