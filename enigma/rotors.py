@@ -734,18 +734,17 @@ class T_UKW(_ReflectorBase):
 
 
 def main():
-    # Test the Reflector wirings
-    ref_classes = _ReflectorBase.__subclasses__()
-    for cl in sorted(ref_classes, key=lambda x: x._name):
-        print('Testing', cl._name, '...')
-        w = cl._wiring
-        for i in range(len(w)):
-            x = i
-            y = cl._abet.index(w[x])
-            z = cl._abet.index(w[y])
-            if x != z:
-                print(cl._name, 'FAILED')
-                break
+    import json
+
+    # output a list of rotors and reflectors
+    print('ROTORS')
+    print(json.dumps(
+        [[r._name, r._short] for r in sorted(_RotorBase.__subclasses__(), key=lambda x: x._name)]
+    ))
+    print('REFLECTORS')
+    print(json.dumps(
+        [[r._name, r._short] for r in sorted(_ReflectorBase.__subclasses__(), key=lambda x: x._name)]
+    ))
 
 
 if __name__ == '__main__': main()

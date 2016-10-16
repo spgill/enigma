@@ -6,15 +6,16 @@ Supports a wide array of historical rotor and reflector wirings.
 
 Technical Details
 ---
-* Developed and tested on Python 3.5.2 for Windows
-    * support for other versions and operating systems is likely, but not guaranteed
-* Designed to be run as a module, but can be initiated from the ```__main__.py``` script
+* Developed and tested on Python 3.5.2 for Windows.
+    * support for other versions and operating systems is likely, but not guaranteed.
+* Designed to be run as a module, but can be initiated from the ```__main__.py``` script.
+* Can be imported and used in your own applications, but no documentation is provided yet (though it shouldn't be too hard to figure out).
 
 Downloading
 ---
-This package is not currently available on PyPI, but may be installed using ```pip``` with the following command;
+This package can be downloaded and installed
+directly from the repo using ```pip install git+git://github.com/spgill/enigma```.
 
-```pip install git+git://github.com/spgill/enigma```
 
 Usage
 ---
