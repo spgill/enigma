@@ -374,7 +374,7 @@ class M4_VIII(_RotorBase):
 
 
 class M4_Beta(_RotorBase):
-    _name = 'Enigma M4 - Rotor Beta (β)'
+    _name = 'Enigma M4 - Rotor Beta'
     _short = 'm4beta'
     _wiring = 'LEYJVCNIXWPBQMDRTAKZGFUHOS'
     _notches = ''
@@ -385,7 +385,7 @@ class M4_Beta(_RotorBase):
 
 
 class M4_Gamma(_RotorBase):
-    _name = 'Enigma M4 - Rotor Gamma (γ)'
+    _name = 'Enigma M4 - Rotor Gamma'
     _short = 'm4gamma'
     _wiring = 'FSOKANUERHMBTIYCWLQPZXVGJD'
     _notches = ''
