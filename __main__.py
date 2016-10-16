@@ -6,8 +6,8 @@ import io
 import sys
 
 # local module imports
-import machine as emachine
-import rotors
+import enigma.machine as emachine
+import enigma.rotors as rotors
 
 
 def _serialize_plugboard(stack):
@@ -168,23 +168,6 @@ def main():
         """
     )
 
-    # Mode argument(s)
-    parser.add_argument(
-        '--mode', '-m',
-        default='classic',
-        choices=['classic', 'modern', 'byte'],
-        required=False,
-        help="""
-        Which mode the enigma machine will operate in. (default: classic)
-        Classic mode will only process characters A through Z, will
-        capitalize lowercase letters, and will remove invalid ones.
-        Modern mode will preserve case, and invalid characters
-        will pass through unchanged (without affecting rotors).
-        Byte mode will process any 8-bit character, but REQUIRES that
-        byte-compatible rotors and reflectors be passed into the machine.
-        """
-    )
-
     # Other arguments
     parser.add_argument(
         '--chunk-size', '-c',
@@ -212,14 +195,6 @@ def main():
         """
     )
     parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        required=False,
-        help="""
-        Enable verbosity; printing LOTS of messages to stderr.
-        """
-    )
-    parser.add_argument(
         '--typewriter', '-t',
         action='store_true',
         required=False,
@@ -239,18 +214,16 @@ def main():
     machine = None
     if args.state and not args.state_create:
         state = bz2.open(args.state, 'rb').read()
-        machine = emachine.Machine(mode=emachine.Mode[args.mode], state=state)
+        machine = emachine.Machine(state=state)
     elif args.state_seed:
         machine = emachine.Machine(stateSeed=args.state_seed)
     else:
         if not args.rotors or not args.reflector:
             raise ValueError('Rotors and reflectors were not provided')
         machine = emachine.Machine(
-            mode=emachine.Mode[args.mode],
             plugboardStack=args.plugboard,
             rotorStack=args.rotors,
-            reflector=args.reflector,
-            verbose=args.verbose
+            reflector=args.reflector
         )
 
     # If a state file needs to be created, save it and exit

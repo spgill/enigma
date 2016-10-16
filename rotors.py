@@ -1,15 +1,9 @@
 # stdlib module imports
+import array
 import sys
 
 # third-party module imports
 import colorama
-
-
-def vbprint(template, args=[], kwargs={}):
-    """Format and print a message to stderr if verbosity is enabled"""
-    global ENIGMA_verbose
-    if ENIGMA_verbose:
-        sys.stderr.write(template.format(*args, **kwargs) + '\n')
 
 
 def stringToRotor(s):
@@ -63,74 +57,43 @@ class _RotorBase:
     _abet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     _wiring = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     _notches = 'A'
-    _byte_compatible = False
 
     def __init__(self, setting=None, notches=None):
         '''Instantiate a new Rotor with custom or default settings'''
+        # Relative node references
+        self.next = None
+        self.previous = None
+
         # Initial rotor setting. 0 if not defined.
         if setting:
-            if self._byte_compatible:
-                self.setting = setting
-            else:
-                self.setting = self._abet.index(setting)
+            self.setting = self._abet.index(setting)
         else:
             self.setting = 0  # A
 
-        # Initial verbosity flag
-        self.verbose = False
-
-        # Calculate the size information
-        self.wiring_size = len(self._wiring)
-        self.wiring_start = 0
-        self.wiring_end = self.wiring_size - 1
-
         # Initialize and program wiring matrices
-        self.wiring_forward = list(range(self.wiring_size))
-        self.wiring_reverse = list(range(self.wiring_size))
+        self.wiring_forward = array.array('b', [0 for i in range(26)])
+        self.wiring_reverse = array.array('b', [0 for i in range(26)])
 
-        for i in range(self.wiring_size):
+        for i in range(26):
             x = i
             y = self._wiring[i]
-            if not self._byte_compatible:
-                y = self._abet.index(y)
+            y = self._abet.index(y)
             self.wiring_forward[x] = y - x
             self.wiring_reverse[y] = x - y
 
         # Initialize the notch matrix
-        self.notches = []
+        self.notches = array.array('b', [0 for i in range(26)])
         for notch in notches or self._notches:
-            if self._byte_compatible:
-                self.notches.append(notch)
-            else:
-                self.notches.append(self._abet.index(notch))
-
-    def _shift(self, s, n=1):
-        '''Shift a string by n characters'''
-        return s[n:] + s[0:n]
+            self.notches[self._abet.index(notch)] = 1
 
     def _loop(self, n):
         '''Constrain a number N such that 0 <= i <= N in a circular fashion'''
-        while n < self.wiring_start or n > self.wiring_end:
-            if n > self.wiring_end:
-                n -= self.wiring_size
-            if n < self.wiring_start:
-                n += self.wiring_size
+        while n < 0 or n > 25:
+            if n > 25:
+                n -= 26
+            if n < 0:
+                n += 26
         return n
-
-    def vprint(self, template, args=[], kwargs={}):
-        """Format and print a message to stderr if verbosity is enabled"""
-        if self.verbose:
-            kwargs.update({
-                'self': self,
-                'B': colorama.Back,
-                'F': colorama.Fore,
-                'S': colorama.Style
-            })
-            pre = '|{F.GREEN}{self._short:>10}{F.WHITE}:'
-            sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
-
-    def verbose_soundoff(self):
-        self.vprint('Verbosity enabled')
 
     def step(self):
         '''
@@ -138,28 +101,32 @@ class _RotorBase:
         Returns True if the rotor hit its notch and the
         next rotor in the series should be advanced by one letter as well
         '''
-        # check for notches
-        notch = False
-        if self.setting in self.notches:
-            notch = True
-
         # increment rotor index, checking for loop condition
-        self.setting = self._loop(self.setting + 1)
+        self.setting = 0 if self.setting == 25 else self.setting + 1
 
-        # return the flag
-        return notch
+        # If a notch is hit, increment the next in the series
+        if self.notches[self.setting] and self.next:
+            self.next.step()
+
+    def translate(self, pin):
+        """Translate a single pin through the recursive process."""
+        return self.translateForward(pin)
 
     def translateForward(self, pin_in):
         '''Translate one pin through this rotor in first pass mode.'''
         modifier = self.wiring_forward[self._loop(pin_in + self.setting)]
-        out = self._loop(pin_in + modifier)
-        return out
+        pin = self._loop(pin_in + modifier)
+        if self.next:
+            return self.next.translateForward(pin)
+        return self.previous.translateReverse(pin)
 
     def translateReverse(self, pin_in):
         '''Translate one pin through this rotor in reverse pass mode.'''
         modifier = self.wiring_reverse[self._loop(pin_in + self.setting)]
-        out = self._loop(pin_in + modifier)
-        return out
+        pin = self._loop(pin_in + modifier)
+        if self.previous:
+            return self.previous.translateReverse(pin)
+        return pin
 
 
 class _ReflectorBase(_RotorBase):
@@ -167,10 +134,9 @@ class _ReflectorBase(_RotorBase):
 
     # class variables
     _name = 'BASE REFLECTOR'
-    _short = 'base-ref'
+    _short = 'base'
     _abet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     _wiring = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    _byte_compatible = False
 
     def nono(self):
         '''Throw an error because this is not valid for reflectors'''

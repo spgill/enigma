@@ -1,5 +1,5 @@
 # stdlib imports
-import enum
+import array
 import io
 import pickle
 import random
@@ -12,42 +12,21 @@ import colorama
 import enigma.rotors as rotors
 
 
-class Mode(enum.Enum):
-    """Enumeration class for Enigma Machine modes."""
-    classic = 0
-    modern = 1
-    byte = 2
-
-
 class Machine:
     def __init__(
             self,
-            mode=Mode.classic,
             plugboardStack=[],
             rotorStack=[],
             reflector=None,
             state=None,
-            stateSeed='',
-            verbose=False
+            stateSeed=''
             ):
         """Initialize a new Enigma Machine.
-
-        Keyword arguments;
-        -   mode: Which mode the enigma machine will operate in.
-            MUST use the enum class to specify mode. Default is classic.
-            Classic mode will only process characters A through Z, will
-            capitalize lowercase letters, and will remove invalid ones.
-            Modern mode will preserve case, and invalid characters
-            will pass through unchanged (without affecting rotors).
-            Byte mode will process any 8-bit character, but REQUIRES that
-            byte-compatible rotors and reflectors be passed into the machine.
         """
         # Initialize the empty variables
-        self.mode = mode
         self.plugboard = []
         self.rotors = []
         self.reflector = None
-        self.verbose = verbose
 
         # Unpack the state
         if state:
@@ -63,26 +42,23 @@ class Machine:
             self._initRotors(rotorStack)
             self._initReflector(reflector)
 
-        # initialize verbosity
-        self._initVerbosity()
+        # Link all of the rotors and reflectors together
+        self._link()
 
         # go ahead and set a break point
         self.breakSet()
 
     def _initPlugboard(self, stack):
         '''Initialize the plugboard translation matrix'''
-        size = 256 if self.mode is Mode.byte else 26
-
-        # Start with an untampered matrix
-        self.plugboard = list(range(size))
+        # Start with an 1:1 mapping
+        self.plugboard = array.array('b', [i for i in range(26)])
 
         # Swap up the mappings for each desired pair
         for pair in stack:
             x = pair[0]
             y = pair[1]
-            if self.mode is not Mode.byte:
-                x = rotors._RotorBase._abet.index(x.upper())
-                y = rotors._RotorBase._abet.index(y.upper())
+            x = rotors._RotorBase._abet.index(x.upper())
+            y = rotors._RotorBase._abet.index(y.upper())
             self.plugboard[x] = y
             self.plugboard[y] = x
 
@@ -106,16 +82,6 @@ class Machine:
                     'Unknown type of rotor passed into the machine'
                 )
 
-            # Make sure the rotor matches the mode
-            if self.mode == Mode.byte and rotor._byte_compatible is False:
-                raise ValueError(
-                    'Byte-compatible rotors MUST be used with byte mode'
-                )
-            if self.mode != Mode.byte and rotor._byte_compatible is True:
-                raise ValueError(
-                    'Byte-compatible rotors may not be used with text modes'
-                )
-
             # Append it, yo
             self.rotors.append(rotor)
 
@@ -135,29 +101,19 @@ class Machine:
                 'Unknown type of reflector passed into the machine'
             )
 
-        # Make sure the reflector matches the mode
-        if self.mode == Mode.byte and self.reflector._byte_compatible is False:
-            raise ValueError(
-                'Byte-compatible reflectors MUST be used with byte mode'
-            )
-        if self.mode != Mode.byte and self.reflector._byte_compatible is True:
-            raise ValueError(
-                'Byte-compatible reflectors may not be used with text modes'
-            )
+    def _link(self):
+        """Link the rotors and reflectors together in a node-like fashion"""
+        # Link the rotors forward
+        for i in range(len(self.rotors))[:-1]:
+            self.rotors[i].next = self.rotors[i + 1]
 
-    def _initVerbosity(self):
-        """Copy the machine's verbose flag to the rotors and the reflector"""
-        # Let 'em know
-        self.vprint('Verbosity enabled')
+        # Link the rotors backwards
+        for i in range(len(self.rotors))[1:]:
+            self.rotors[i].previous = self.rotors[i - 1]
 
-        # copy to rotors and the reflector
-        self.vprint('Copying verbose flag to rotors and the reflector')
-        colorama.init()
-        for r in self.rotors:
-            r.verbose = self.verbose
-            r.verbose_soundoff()
-        self.reflector.verbose = self.verbose
-        self.reflector.verbose_soundoff()
+        # Link the reflector into the loop
+        self.rotors[-1].next = self.reflector
+        self.reflector.previous = self.rotors[-1]
 
     def _checkByte(self, b):
         '''Sanitize a single character'''
@@ -172,21 +128,6 @@ class Machine:
         # Invalid character.
         else:
             return False
-
-    def vprint(self, template, args=[], kwargs={}):
-        """Format and print a message to stderr if verbosity is enabled"""
-        if not self.verbose:
-            return False
-
-        kwargs.update({
-            'self': self,
-            'B': colorama.Back,
-            'F': colorama.Fore,
-            'S': colorama.Style
-        })
-        pre = '|{F.GREEN}   machine{F.WHITE}:'
-        sys.stderr.write((pre + template).format(*args, **kwargs) + '\n')
-        return True
 
     def stateGet(self):
         '''Get a serialized state of the machine. (the 'settings')'''
@@ -253,39 +194,25 @@ class Machine:
         assert hasattr(self, '_breakstate')
         self.stateSet(self._breakstate)
 
-    def stepRotors(self):
-        """Step the machine's rotors once, in order."""
-        step = True
-        for rotor in self.rotors:
-            if step:
-                step = rotor.step()
-                if not step:
-                    break
-
     def translatePin(self, pin):
         """
         Translate a singular pin (as an integer) through the plugboard,
         rotors, reflector, and back again.
         """
+        # Isolate the first (maybe only) rotor
+        rotor = self.rotors[0]
+
         # Forward through the plugboard
         pin = self.plugboard[pin]
 
-        # Forward through the rotors
-        for rotor in self.rotors:
-            pin = rotor.translateForward(pin)
-
-        # Reflect it
-        pin = self.reflector.translateForward(pin)
-
-        # Backwards through the rotors
-        for rotor in reversed(self.rotors):
-            pin = rotor.translateReverse(pin)
+        # Send the pin through the rotors
+        pin = rotor.translate(pin)
 
         # Backwards through the plugboard
         pin = self.plugboard[pin]
 
         # Step the rotors
-        self.stepRotors()
+        rotor.step()
 
         # Return the fruits of our labor
         return pin
@@ -297,34 +224,28 @@ class Machine:
         # Initialize the outgoing chunk
         chunk_out = bytearray()
 
-        # Byte mode switch
-        if self.mode is Mode.byte:
-            for byte_in in chunk_in:
-                chunk_out.append(self.translatePin(byte_in))
-
         # Text modes
-        else:
-            for byte_in in chunk_in:
-                # Check the byte
-                byte_out = self._checkByte(byte_in)
-                if not byte_out:
-                    if self.mode is Mode.modern:
-                        chunk_out.append(byte_in)
-                    continue
+        for byte_in in chunk_in:
+            # Check the byte
+            byte_out = self._checkByte(byte_in)
+            if not byte_out:
+                # if self.mode is Mode.modern:
+                #     chunk_out.append(byte_in)
+                continue
 
-                # Convert the byte to a pin
-                byte_out -= 65
+            # Convert the byte to a pin
+            byte_out -= 65
 
-                # Run it through the machine
-                byte_out = self.translatePin(byte_out)
+            # Run it through the machine
+            byte_out = self.translatePin(byte_out)
 
-                # Convert it back into a byte
-                byte_out += 65
-                if self.mode is Mode.modern and byte_in > 90:
-                    byte_out += 32
+            # Convert it back into a byte
+            byte_out += 65
+            # if self.mode is Mode.modern and byte_in > 90:
+            #     byte_out += 32
 
-                # Append it to the array
-                chunk_out.append(byte_out)
+            # Append it to the array
+            chunk_out.append(byte_out)
 
         # Return the processed chunk
         return chunk_out
