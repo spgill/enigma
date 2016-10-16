@@ -9,7 +9,7 @@ import sys
 import colorama
 
 # local module imports
-import rotors
+import enigma.rotors as rotors
 
 
 class Mode(enum.Enum):
