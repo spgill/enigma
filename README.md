@@ -14,7 +14,9 @@ Technical Details
 Downloading
 ---
 This package can be downloaded and installed
-directly from the repo using ```pip install git+git://github.com/spgill/enigma```.
+directly from the repo using
+
+```pip install git+git://github.com/spgill/enigma```.
 
 
 Usage
