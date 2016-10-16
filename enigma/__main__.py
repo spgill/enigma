@@ -5,6 +5,9 @@ import datetime
 import io
 import sys
 
+# third-party module imports
+import colorama
+
 # local module imports
 import enigma.machine as emachine
 import enigma.rotors as rotors
@@ -25,11 +28,28 @@ def _serialize_plugboard(stack):
             stack[y] = None
     return pairs
 
+
 def main():
+    colorama.init()
+
     """Main method (seems kinda redundant in the main file but w/e)"""
     # Define the master parser
     parser = argparse.ArgumentParser(
         description='Process some data through a simulated Enigma machine'
+    )
+
+    # List args (for listing things)
+    parser.add_argument(
+        '--list-rotors', '-lro',
+        action='store_true',
+        required=False,
+        help='Print list of built-in rotors and exit.'
+    )
+    parser.add_argument(
+        '--list-reflectors', '-lrf',
+        action='store_true',
+        required=False,
+        help='Print list of built-in reflectors and exit.'
     )
 
     # Rotor args
@@ -209,6 +229,32 @@ def main():
         print('("--help" flag inferred from no args)\n')
         sys.argv.append('--help')
     args = parser.parse_args()
+
+    # Check for the list arguments
+    if args.list_rotors:
+        rotorset = set(rotors._RotorBase.__subclasses__())
+        print('Listing all', len(rotorset), 'rotors with short names;')
+        rotorset.remove(rotors._ReflectorBase)
+        for rotor in sorted(rotorset, key=lambda x: x._name):
+            print('  - {0:>30} -> {1}{2}{3}'.format(
+                rotor._name,
+                colorama.Fore.RED,
+                rotor._short,
+                colorama.Style.RESET_ALL
+            ))
+        return
+
+    if args.list_reflectors:
+        refset = set(rotors._ReflectorBase.__subclasses__())
+        print('Listing all', len(refset), 'reflectors with short names;')
+        for ref in sorted(refset, key=lambda x: x._name):
+            print('  - {0:>30} -> {1}{2}{3}'.format(
+                ref._name,
+                colorama.Fore.RED,
+                ref._short,
+                colorama.Style.RESET_ALL
+            ))
+        return
 
     # Initialize the enigma machine using specified rotors or a state file
     machine = None
