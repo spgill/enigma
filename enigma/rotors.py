@@ -138,13 +138,13 @@ class _ReflectorBase(_RotorBase):
     _abet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     _wiring = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-    def nono(self):
-        '''Throw an error because this is not valid for reflectors'''
-        raise RuntimeError('YOU CANNOT DO THAT TO A REFLECTOR, YO.')
+    def invalid(self):
+        """Used to nerf invalid methods"""
+        pass
 
-    # Make the bad functions 'no-no' functions so they'll throw errors
-    step = nono
-    translateReverse = nono
+    # Assign the "invalid" method to class methods that are invalid
+    step = invalid
+    translateReverse = invalid
 
 
 # # # Enigma I # # #
