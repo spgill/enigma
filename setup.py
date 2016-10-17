@@ -3,9 +3,9 @@ import setuptools
 
 
 def readme():
-    try:
-        import requests
-        if os.path.isfile('README.md'):
+    if os.path.isfile('README.md'):
+        try:
+            import requests
             r = requests.post(
                 url='http://c.docverter.com/convert',
                 data={'from': 'markdown', 'to': 'rst'},
@@ -15,13 +15,16 @@ def readme():
                 return r.content.decode()
             else:
                 return 'ERROR CONVERTING README!'
-    except ImportError:
-        return '!!NO CONVERSION!!\n\n' + open('README.md', 'r').read()
+        except ImportError:
+            print('No `requests` module. No readme conversion applied.')
+            return '!!NO CONVERSION!!\n\n' + open('README.md', 'r').read()
+    else:
+        return 'No readme for local builds.'
 
 
 setuptools.setup(
     name='enigma',
-    version='1.0.1',
+    version='1.0.2',
     description='Python Enigma-like simulation with historical wirings.',
     long_description=readme(),
     keywords='enigma machine encrypt encryption rotor rotors',
