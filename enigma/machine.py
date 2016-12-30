@@ -1,5 +1,6 @@
 # stdlib imports
 import array
+import enum
 import io
 import pickle
 import random
@@ -12,6 +13,11 @@ import colorama
 import enigma.rotors as rotors
 
 
+class OUTPUT(enum.Enum):
+    PENTAGRAPH = 1
+    STREAM = 2
+
+
 class Machine:
     def __init__(
             self,
@@ -19,7 +25,8 @@ class Machine:
             rotorStack=[],
             reflector=None,
             state=None,
-            stateSeed=''
+            stateSeed='',
+            outputMode=OUTPUT.PENTAGRAPH
             ):
         """Initialize a new Enigma Machine.
         """
@@ -45,8 +52,11 @@ class Machine:
         # Link all of the rotors and reflectors together
         self._link()
 
-        # go ahead and set a break point
+        # Go ahead and set a break point
         self.breakSet()
+
+        # Store the mode
+        self.mode = outputMode
 
     def _initPlugboard(self, stack):
         '''Initialize the plugboard translation matrix'''
@@ -229,8 +239,6 @@ class Machine:
             # Check the byte
             byte_out = self._checkByte(byte_in)
             if not byte_out:
-                # if self.mode is Mode.modern:
-                #     chunk_out.append(byte_in)
                 continue
 
             # Convert the byte to a pin
@@ -241,17 +249,25 @@ class Machine:
 
             # Convert it back into a byte
             byte_out += 65
-            # if self.mode is Mode.modern and byte_in > 90:
-            #     byte_out += 32
 
             # Append it to the array
             chunk_out.append(byte_out)
+
+            # If pentagraph mode is on, increment and Check
+            if self.mode == OUTPUT.PENTAGRAPH:
+                self.pentacount += 1
+                if self.pentacount == 5:
+                    chunk_out.append(0x20)
+                    self.pentacount = 0
 
         # Return the processed chunk
         return chunk_out
 
     def translateString(self, s, **kwargs):
         """Lazy method to translate a string"""
+        # Reset the pentagraph counter
+        self.pentacount = 0
+
         return str(self.translateChunk(bytes(s), **kwargs))
 
     def _readChunks(self, stream, chunkSize):
@@ -278,6 +294,9 @@ class Machine:
             **kwargs
             ):
         """Translate a stream (file-like object) chunk by chunk."""
+        # Reset the pentagraph counter
+        self.pentacount = 0
+
         # Figure out the size of the input stream
         stream_in_size = self._streamSize(stream_in)
 
