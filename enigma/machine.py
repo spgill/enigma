@@ -4,10 +4,8 @@ import enum
 import io
 import pickle
 import random
-import sys
 
 # third party imports
-import colorama
 
 # local module imports
 import enigma.rotors as rotors
