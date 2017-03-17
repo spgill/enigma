@@ -13,7 +13,7 @@ import enigma.rotors as rotors
 
 class OUTPUT(enum.Enum):
     PENTAGRAPH = 1
-    STREAM = 2
+    CONTINUOUS = 2
 
 
 class Machine:
