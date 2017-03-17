@@ -24,7 +24,7 @@ def readme():
 
 setuptools.setup(
     name='enigma',
-    version='1.0.3',
+    version='1.1',
     description='Python Enigma-like simulation with historical wirings.',
     long_description=readme(),
     keywords='enigma machine encrypt encryption rotor rotors',
