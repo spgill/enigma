@@ -33,6 +33,8 @@ class Machine:
         self.rotors = []
         self.reflector = None
 
+        self.pentacount = 0
+
         # Unpack the state
         if state:
             self.stateSet(state)
